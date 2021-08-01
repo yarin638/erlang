@@ -9,30 +9,62 @@
 -module(traffic_light).
 -author("yarinabutbul").
 -behaviour(gen_statem).
--define(NAME, traffic_light).
-%% API
--export([start_link/0]).
--export([init/1,callback_mode/0]).
--export([timeout/0]).
--export([red/3,yellow/3,green/3]).
 
+-export([start/0,push/0,get_count/0,stop/0]).
+-export([terminate/3,code_change/4,init/1,callback_mode/0]).
+-export([green/3,red/3,yellow/3]).
 
-start_link() ->
-  gen_statem:start_link({local, ?NAME}, ?MODULE, [], []).
+name() -> pushbutton_statem. % The registered server name
 
+%% API.  This example uses a registered name name()
+%% and does not link to the caller.
+start() ->
+  gen_statem:start({local,name()}, ?MODULE, [], []).
+push() ->
+  gen_statem:call(name(), push).
+get_count() ->
+  gen_statem:call(name(), get_count).
+stop() ->
+  gen_statem:stop(name()).
+
+%% Mandatory callback functions
+terminate(_Reason, _State, _Data) ->
+  void.
+code_change(_Vsn, State, Data, _Extra) ->
+  {ok,State,Data}.
+init([]) ->
+  %% Set the initial state + data.  Data is used only as a counter.
+  State = red, Data = 0,
+  {ok,State,Data}.
 callback_mode() -> state_functions.
 
-init([]) ->
-{ok, red}.
+%%% state callback(s)
+
+red({call,From}, push, Data) ->
+  %% Go to 'on', increment count and reply
+  %% that the resulting status is 'on'
+  {next_state,yellow,Data+1,[{reply,From,yellow}]};
+red(EventType, EventContent, Data) ->
+  handle_event(EventType, EventContent, Data).
 
 
-%events
-timeout()-> gen_statem:cast(?NAME, {time}).
+yellow({call,From}, push, Data) ->
+  %% Go to 'on', increment count and reply
+  %% that the resulting status is 'on'
+  {next_state,green,Data+1,[{reply,From,green}]};
+yellow(EventType, EventContent, Data) ->
+  handle_event(EventType, EventContent, Data).
 
-%states
-red({call, yellow}, EventContent, StateData)-> io:format("red~n"),{next_state,yellow, red}.
+green({call,From}, push, Data) ->
+  %% Go to 'off' and reply that the resulting status is 'off'
+  {next_state,red,Data,[{reply,From,red}]};
+green(EventType, EventContent, Data) ->
+  handle_event(EventType, EventContent, Data).
 
-yellow({call, red}, EventContent, StateData)-> io:format("yellow~n"),{next_state,yellow, green};
-yellow({call, green}, EventContent, StateData)-> io:format("yellow~n"),{next_state,yellow, red}.
-
-green({call, yellow}, EventContent, StateData)-> io:format("yellow~n"),{next_state,green, yellow}.
+%% Handle events common to all states
+handle_event({call,From}, get_count, Data) ->
+  %% Reply with the current count
+  {keep_state,Data,[{reply,From,Data}]};
+handle_event(_, _, Data) ->
+  %% Ignore all other events
+  {keep_state,Data}.
