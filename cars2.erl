@@ -18,7 +18,7 @@
 -export([start_link/0,terminate/3,code_change/4,callback_mode/0,start/3,init/1]).
 -export([stright/3,stooping/3]).
 
--export([car_alret/0,clear_path/0,turn_right/0,turn_left/0,junc_alert/0,stop/0]).
+-export([car_alret/0,clear_path/0,turn_right/0,turn_left/0,traffic_light_red/0,traffic_light_orange/0,traffic_light_green/0,stop/0]).
 
 start_link() ->
   gen_statem:start_link({local, ?SERVER}, ?MODULE, [], []).
@@ -54,7 +54,11 @@ turn_left() ->
 car_alret() ->
   gen_statem:call(cars, car_alret).
 
-junc_alert()->gen_statem:call(cars, junc_alert).
+traffic_light_red()->gen_statem:call(cars, traffic_light_red).
+
+traffic_light_orange()->gen_statem:call(cars, traffic_light_orange).
+
+traffic_light_green()->gen_statem:call(cars, traffic_light_green).
 
 stop() ->
   gen_statem:stop(cars).
@@ -70,10 +74,34 @@ stright({call,From}, clear_path, Data) ->
     Dir==r->{keep_state,{X+1,Y,Dir},[{reply,From,stright}]};
     true->{keep_state,{X-1,Y,Dir},[{reply,From,stright}]} end;
 
+
+
 stright({call,From}, car_alret, Data) ->
   {X,Y,Dir}=Data,
   io:format("{~p,~p,~p}",[X,Y,Dir]),
   {next_state,stooping,Data,[{reply,From,stright}]} ;
+
+
+stright({call,From}, traffic_light_green, Data) ->
+  {X,Y,Dir}=Data,
+  io:format("{~p,~p,~p}",[X,Y,Dir]),
+  if
+    Dir==u->{keep_state,{X,Y+1,Dir},[{reply,From,stright}]};
+    Dir==d->{keep_state,{X,Y-1,Dir},[{reply,From,stright}]};
+    Dir==r->{keep_state,{X+1,Y,Dir},[{reply,From,stright}]};
+    true->{keep_state,{X-1,Y,Dir},[{reply,From,stright}]} end;
+
+
+stright({call,From}, traffic_light_red, Data) ->
+  {X,Y,Dir}=Data,
+  io:format("{~p,~p,~p}",[X,Y,Dir]),
+  {next_state,stooping,Data,[{reply,From,stright}]} ;
+
+stright({call,From}, traffic_light_orange, Data) ->
+  {X,Y,Dir}=Data,
+  io:format("{~p,~p,~p}",[X,Y,Dir]),
+  {next_state,stooping,Data,[{reply,From,stright}]} ;
+
 
 stright({call,From}, turn_right, Data) ->
   {X,Y,Dir}=Data,
@@ -100,8 +128,22 @@ stooping({call,From}, car_alret, Data)->
   io:format("{~p,~p,~p}",[X,Y,Dir]),
   {keep_state,Data,[{reply,From,stright}]};
 
+stooping({call,From}, traffic_light_red, Data)->
+  {X,Y,Dir}=Data,
+  io:format("{~p,~p,~p}",[X,Y,Dir]),
+  {keep_state,Data,[{reply,From,stright}]};
+
+stooping({call,From}, traffic_light_orange, Data)->
+  {X,Y,Dir}=Data,
+  io:format("{~p,~p,~p}",[X,Y,Dir]),
+  {keep_state,Data,[{reply,From,stright}]};
 
 stooping({call,From}, clear_path, Data)->
+  {X,Y,Dir}=Data,
+  io:format("{~p,~p,~p}",[X,Y,Dir]),
+  {next_state,stright,Data,[{reply,From,stright}]};
+
+stooping({call,From}, traffic_light_green, Data)->
   {X,Y,Dir}=Data,
   io:format("{~p,~p,~p}",[X,Y,Dir]),
   {next_state,stright,Data,[{reply,From,stright}]};
