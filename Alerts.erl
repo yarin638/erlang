@@ -10,7 +10,60 @@
 -author("eliav").
 
 %% API
--export([tl_alert/2,car_alert/2]).
+-export([tl_alert/2,car_alert/2,junc_alert/2]).
+junc_alert(Car,'$end_of_table')->
+  junc_alert(Car,ets:first(junctions));
+junc_alert(Car,Junction)->
+  [_CarNumber1,Road,{Cx,Cy},Speed,Dir,_Color]=ets:lookup(cars,Car),
+  [{Jx,Jy},RoadList,DirList]=ets:lookup(junctions,Junction),
+  Bool=lists:member(Road,RoadList),
+  case Bool of
+    false->
+      junct_alert(Car,ets:next(junctions,Junction));
+    true->
+      case Dir of
+        north-> %car is moving north
+          case Jy-Cy<5 and Jy-Cy>0 of   %check if car is near the junction, and didn't already passed it.
+            true->
+              NewDir=turn_where(Dir,DirList),
+              NewRoad=find_road(NewDir,DirList,RoadList),
+              cars:junc_alert(Car,NewDir,NewRoad),
+              time:sleep(1000);
+            false->
+              junc_alert(Car,ets:next(junctions,Junction))
+          end;
+        south-> %car is moving north
+          case Cy-Jy<25 and Cy-Jy>0 of   %check if car is near the junction, and didn't already passed it.
+            true->
+              cars:tl_alert(Car,sys:get_state(TLPid)),
+              timer:sleep(1500),
+              tl_alert(Car,ets:first(traffic_light));
+            _->
+              tl_alert(Car,ets:next(traffic_light,Junction))
+          end;
+        west-> %car is moving north
+          case Cx-Jx<25 and Cx-Jx>0 of   %check if car is near the junction, and didn't already passed it.
+            true->
+              cars:tl_alert(Car,sys:get_state(TLPid)),
+              timer:sleep(1500),
+              tl_alert(Car,ets:first(traffic_light));
+            _->
+              tl_alert(Car,ets:next(traffic_light,Junction))
+          end;
+        east-> %car is moving north
+          case Jx-Cx<25 and Jx-Cx>0 of   %check if car is near the junction, and didn't already passed it.
+            true->
+              cars:tl_alert(Car,sys:get_state(TLPid)),
+              timer:sleep(1500),
+              tl_alert(Car,ets:first(traffic_light));
+            _->
+              tl_alert(Car,ets:next(traffic_light,Junction))
+          end
+      end
+  end
+  
+
+
 car_alert(Car,'$end_of_table')->
   car_alert(Car,ets:first:(cars));
 
@@ -29,7 +82,7 @@ car_alert(Car,P_car)->
         north->
           if
             Cy2-Cy1<25 and Cy2-Cy1>0 ->
-              cars:close:car_alert(Car,P_car),
+              cars:car_alert(Car),
               timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->
@@ -38,7 +91,7 @@ car_alert(Car,P_car)->
         south->
           if
             Cy1-Cy2<25 and Cy1-Cy2>0 ->
-              cars:close:car_alert(Car,P_car),
+              cars:car_alert(Car),
               timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->
@@ -47,7 +100,7 @@ car_alert(Car,P_car)->
         west->
           if
             Cx1-Cx2<25 and Cx1-Cx2>0 ->
-              cars:close:car_alert(Car,P_car),
+              cars:car_alert(Car),
               timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->
@@ -56,7 +109,7 @@ car_alert(Car,P_car)->
         east->
           if
             Cx1-Cx2<25 and Cx1-Cx2>0 ->
-              cars:close:car_alert(Car,P_car),
+              cars:car_alert(Car),
               timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->
@@ -119,8 +172,30 @@ tl_alert(Car,Junction)->
   end.
 
 
+%%%%%%%subfunc
+
+%counter([_|T],Num)->counter(T,Num+1);
+%counter([],Num)->Num.
 
 
+turn_where(west,Dirlist)->
+  turn_where(lists:delete(east,Dirlist));
+turn_where(south,Dirlist)->
+  turn_where(lists:delete(north,Dirlist));
+turn_where(east,Dirlist)->
+  turn_where(lists:delete(west,Dirlist));
+turn_where(north,Dirlist)->
+  turn_where(lists:delete(south,Dirlist)).
+turn_where(DirList)->
+  Num=length(DirList),
+  DtoUse=rand:uniform(Num),
+  lists:nth(DtoUse,DirList).
 
+find_road(Elem,Dirlist,RoadList)->
+  Ind=index_of(Elem,Dirlist),
+  lists:nth(Ind,RoadList).
 
-
+index_of(Item, List) -> index_of(Item, List, 1).
+index_of(_, [], _)  -> not_found;
+index_of(Item, [Item|_], Index) -> Index;
+index_of(Item, [_|Tl], Index) -> index_of(Item, Tl, Index+1).
