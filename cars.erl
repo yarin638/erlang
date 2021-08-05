@@ -25,14 +25,21 @@ start_link() ->
 
 start(Cname,Details,Pc)->
   put(cname,Cname),
-  gen_statem:start({local,get(cname)},?MODULE,[Cname,Details,Pc],[]).
+  gen_statem:start({local,get(cname)},?MODULE,[Cname,Details,Pc,Cname],[]).
 
 
 %%%%%%Api must have func%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-init([Cname,Details,Pc])->%spwan all the sensors
+init([Cname,Details,Pc,Cname])->%spwan all the sensors
+
   put(details,Details),
-  Data={1,1,north},
-  {ok,stright,Data}.
+  Data={1,1,north,Cname},
+  ets:insert(cars,{Cname,0,{1,1},0,north,red}),
+  ets:update_element(cars,Cname,[{3,{1,10}}]),
+  io:format("ets: ~p~n",[ets:lookup(cars,Cname)]),
+  %io:format("first junc ~p~n",[ets:lookup(ets:first(junction)])),
+  SensorPid = spawn(alerts,junc_alert,[Cname,ets:first(junction)]), % spawn all car sensors, add them to their ets and put them in process dictionary
+  SensorPid2 = spawn(alerts,tl_alert,[Cname,ets:first(traffic_light)]), % spawn all car sensors, add them to their ets and put them in process dictionary
+  {ok,stright,Data,1000}.
 terminate(_Reason, _State, _Data) ->
   void.
 code_change(_Vsn, State, Data, _Extra) ->
@@ -88,63 +95,72 @@ stop() ->
 %%%%%%%%%%%%states%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 stright({call,From}, clear_path, Data) ->
-  {X,Y,Dir}=Data,
+  {X,Y,Dir,Cname}=Data,
   io:format("{~p,~p,~p}",[X,Y,Dir]),
   if
-    Dir==north->{keep_state,{X,Y+1,Dir},[{state_timeout,1000,time}]};
-    Dir==south->{keep_state,{X,Y-1,Dir},[{state_timeout,1000,time}]};
-    Dir==west->{keep_state,{X+1,Y,Dir},[{state_timeout,1000,time}]};
-    true->{keep_state,{X-1,Y,Dir}, [{state_timeout,1000,time}]}end;
+    Dir==north-> ets:update_element(cars,Cname,[{2,{X,Y+1}}]),{keep_state,{X,Y+1,Dir,Cname},[{state_timeout,1000,time}]};
+    Dir==south->  ets:update_element(cars,Cname,[{3,{X,Y-1}}]),{keep_state,{X,Y-1,Dir,Cname},[{state_timeout,1000,time}]};
+    Dir==west->  ets:update_element(cars,Cname,[{3,{X+1,Y}}]),{keep_state,{X+1,Y,Dir,Cname},[{state_timeout,1000,time}]};
+    true->  ets:update_element(cars,Cname,[{3,{X-1,Y}}]),{keep_state,{X-1,Y,Dir,Cname}, [{state_timeout,1000,time}]}end;
 
 stright(state_timeout, time,  Data) ->
-  {X,Y,Dir}=Data,
+  {X,Y,Dir,Cname}=Data,
   io:format("{~p,~p,~p}",[X,Y,Dir]),
   if
-    Dir==north->{keep_state,{X,Y+1,Dir},[{state_timeout,1000,time}]};
-    Dir==south->{keep_state,{X,Y-1,Dir},[{state_timeout,1000,time}]};
-    Dir==west->{keep_state,{X+1,Y,Dir},[{state_timeout,1000,time}]};
-    true->{keep_state,{X-1,Y,Dir},[{state_timeout,1000,time}]} end;
+    Dir==north-> ets:update_element(cars,Cname,[{3,{X,Y+1}}]),{keep_state,{X,Y+1,Dir,Cname},[{state_timeout,1000,time}]};
+    Dir==south-> ets:update_element(cars,Cname,[{3,{X,Y-1}}]),{keep_state,{X,Y-1,Dir,Cname},[{state_timeout,1000,time}]};
+    Dir==west-> ets:update_element(cars,Cname,[{3,{X+1,Y}}]),{keep_state,{X+1,Y,Dir,Cname},[{state_timeout,1000,time}]};
+    true-> ets:update_element(cars,Cname,[{3,{X-1,Y}}]),{keep_state,{X-1,Y,Dir,Cname},[{state_timeout,1000,time}]} end;
+
+stright(timeout, 1000,  Data) ->
+  {X,Y,Dir,Cname}=Data,
+  io:format("{~p,~p,~p}",[X,Y,Dir]),
+  if
+    Dir==north->ets:update_element(cars,Cname,[{3,{X,Y+1}}]),{keep_state,{X,Y+1,Dir,Cname},[{state_timeout,1000,time}]};
+    Dir==south->ets:update_element(cars,Cname,[{3,{X,Y-1}}]),{keep_state,{X,Y-1,Dir,Cname},[{state_timeout,1000,time}]};
+    Dir==west->ets:update_element(cars,Cname,[{3,{X+1,Y}}]),{keep_state,{X+1,Y,Dir,Cname},[{state_timeout,1000,time}]};
+    true->ets:update_element(cars,Cname,[{3,{X-1,Y}}]),{keep_state,{X-1,Y,Dir,Cname},[{state_timeout,1000,time}]} end;
 
 
 
 stright({call,From}, {car_alert,Car2}, Data) ->
-  {X,Y,Dir}=Data,
+  {X,Y,Dir,Cname}=Data,
   io:format("{~p,~p,~p}",[X,Y,Dir]),
   {next_state,stooping,Data,[{reply,From,stright}]} ;
 
 
 stright({call,From}, traffic_light_green, Data) ->
-  {X,Y,Dir}=Data,
+  {X,Y,Dir,Cname}=Data,
   io:format("{~p,~p,~p}",[X,Y,Dir]),
   if
-    Dir==u->{keep_state,{X,Y+1,Dir},[{reply,From,stright}]};
-    Dir==d->{keep_state,{X,Y-1,Dir},[{reply,From,stright}]};
-    Dir==r->{keep_state,{X+1,Y,Dir},[{reply,From,stright}]};
-    true->{keep_state,{X-1,Y,Dir},[{reply,From,stright}]} end;
+    Dir==u->{keep_state,{X,Y+1,Dir,Cname},[{reply,From,stright}]};
+    Dir==d->{keep_state,{X,Y-1,Dir,Cname},[{reply,From,stright}]};
+    Dir==r->{keep_state,{X+1,Y,Dir,Cname},[{reply,From,stright}]};
+    true->{keep_state,{X-1,Y,Dir,Cname},[{reply,From,stright}]} end;
 
 
 stright({call,From}, traffic_light_red, Data) ->
-  {X,Y,Dir}=Data,
+  {X,Y,Dir,Cname}=Data,
   io:format("{~p,~p,~p}",[X,Y,Dir]),
   {next_state,stooping,Data,[{reply,From,stright}]} ;
 
 stright({call,From}, traffic_light_orange, Data) ->
-  {X,Y,Dir}=Data,
+  {X,Y,Dir,Cname}=Data,
   io:format("{~p,~p,~p}",[X,Y,Dir]),
   {next_state,stooping,Data,[{reply,From,stright}]} ;
 
 
 stright({call,From}, turn_north, Data) ->
-  {X,Y,Dir}=Data,
-  io:format("{~p,~p,~p}",[X,Y,Dir]),{keep_state,{X,Y+1,north},[{reply,From,stright}]};
+  {X,Y,Dir,Cname}=Data,
+  io:format("{~p,~p,~p}",[X,Y,Dir]),{keep_state,{X,Y+1,north,Cname},[{reply,From,stright}]};
 
 stright({call,From}, turn_south, Data) ->
-  {X,Y,Dir}=Data,
-  io:format("{~p,~p,~p}",[X,Y,Dir]),{keep_state,{X,Y-1,south},[{reply,From,stright}]};
+  {X,Y,Dir,Cname}=Data,
+  io:format("{~p,~p,~p}",[X,Y,Dir]),{keep_state,{X,Y-1,south,Cname},[{reply,From,stright}]};
 
 stright({call,From}, turn_east, Data) ->
-  {X,Y,Dir}=Data,
-  io:format("{~p,~p,~p}",[X,Y,Dir]),{keep_state,{X+1,Y,east},[{reply,From,stright}]};
+  {X,Y,Dir,Cname}=Data,
+  io:format("{~p,~p,~p}",[X,Y,Dir]),{keep_state,{X+1,Y,east,Cname},[{reply,From,stright}]};
 
 stright({call,From}, turn_west, Data) ->
   {X,Y,Dir}=Data,
@@ -157,7 +173,7 @@ stooping({call,From}, {car_alert,Car2}, Data)->
   {keep_state,Data,[{reply,From,stright}]};
 
 stooping({call,From}, traffic_light_red, Data)->
-  {X,Y,Dir}=Data,
+  {X,Y,Dir,Cname}=Data,
   io:format("{~p,~p,~p}",[X,Y,Dir]),
   {keep_state,Data,[{reply,From,stright}]};
 
