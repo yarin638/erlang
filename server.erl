@@ -43,8 +43,8 @@ start_link() ->
   {stop, Reason :: term()} | ignore).
 init([]) ->
   ets:new(cars,[set,public,named_table]), ets:new(junction,[set,public,named_table]),
-  cars:start(yarin,1,1),cars:start(eliav,1,1),
-  cars:clear_path(yarin),
+  traffic_light:start({0,0},yarin),traffic_light:start({0,0},eliav),
+  traffic_light:push(yarin),traffic_light:push(eliav),
   {ok, #server_state{}}.
 
 %% @private
