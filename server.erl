@@ -45,7 +45,7 @@ init([]) ->
   ets:new(cars,[set,public,named_table]), ets:new(junction,[set,public,named_table]),ets:new(traffic_light,[set,public,named_table]),
   ets:insert(junction,{{1,50},[0,1],[west,north]}),
   %ets:lookup(junction,{1,7}),
-  traffic_light:start({1,50},t1),cars:start(yarn,1,1),
+  traffic_light:start({1,50},t1),cars:start(yarn,1,1),cars:start(eliav,1,5),
   {ok, #server_state{}}.
 
 %% @private
