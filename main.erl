@@ -13,9 +13,10 @@
 -include_lib("wx/include/wx.hrl").
 -define(SERVER, ?MODULE).
 
--export([start/0,init/1,handle_event/2,handle_sync_event/3]).
+-export([start/0,init/1,handle_event/2,handle_info/2,handle_sync_event/3]).
 -define(Mx,1344).
 -define(My,890).
+-define(Timer,67).
 -record(state,{frame, panel, paint,map,redcarn,redcarw,redcare,redcars,bluecarn,bluecarw,bluecare,bluecars}).
 
 
@@ -23,6 +24,7 @@ start() ->
   wx_object:start({local,?SERVER},?MODULE,[],[]).
 
 init([])->
+  spawn(server,start_link,[]),
   WxServer=wx:new(),
   MyFrame=wxFrame:new(WxServer,123,"TrafficMap",[{size,{?Mx,?My}}]),
   MyPanel=wxPanel:new(MyFrame),
@@ -30,7 +32,18 @@ init([])->
   wxFrame:show(MyFrame),
   wxPanel:connect(MyPanel, paint, [callback]),
   wxFrame:connect(MyFrame, close_window),
+  erlang:send_after(?Timer,self(),timer),
   {MyFrame,#state{frame=MyFrame,panel=MyPanel,map=Map,redcarn=RedCarN,redcarw=RedCarW,redcare=RedCarE,redcars=RedCarS,bluecarn=BlueCarN,bluecarw=BlueCarW,bluecare=BlueCarE,bluecars=BlueCarS}}.
+
+handle_info(timer, State=#state{frame = Frame}) ->  % refresh screen for graphics
+  wxWindow:refresh(Frame), % refresh screen
+  erlang:send_after(?Timer,self(),timer),
+  {noreply, State};
+
+handle_info({nodeup,PC},State)->
+  io:format("~p nodeup ~n",[PC]),
+  {noreply, State}.
+
 
 
 handle_event(#wx{event = #wxClose{}},State = #state {frame = Frame}) -> % close window event
@@ -51,10 +64,11 @@ handle_sync_event(_Event,_,State) ->
   {noreply, State}.
 
 cars_movement(_,_,_,_,_,_,_,_,_,'$end_of_table')->
-  none;
+  ok;
 cars_movement(Panel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,Car)->
   DC=wxClientDC:new(Panel),
   [{_CarNumber1,_Road,{Cx,Cy},_Speed,Dir,Color}]=ets:lookup(cars,Car),
+  %io:format("~p",[ets:lookup(cars,Car)]),
   case Color of
     red->
       case Dir of

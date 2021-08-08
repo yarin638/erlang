@@ -34,8 +34,8 @@ junc_alert(Car,Junction)->
       NewDir=turn_where(Dir,DirList), %if it does, decide to where it should turn, even if it not close to the junction.
       NewRoad=find_road(NewDir,DirList,RoadList),
       case Dir of
-        north-> %car is moving north
-          case (Jy-Cy<5) and (Jy-Cy>0) of   %check if car is near the junction, and didn't already passed it.
+        south-> %car is moving north
+          case (Jy-Cy<25) and (Jy-Cy>0) of   %check if car is near the junction, and didn't already passed it.
             true->
               cars:junc_alert(Car,NewDir,NewRoad), %send event
               timer:sleep(1000),
@@ -43,7 +43,7 @@ junc_alert(Car,Junction)->
             false->
               junc_alert(Car,ets:next(junction,Junction))
           end;
-        south-> %car is moving north
+        north-> %car is moving north
           case (Cy-Jy<25) and(Cy-Jy>0) of   %check if car is near the junction, and didn't already passed it.
             true->
               cars:junc_alert(Car,NewDir,NewRoad), %send event
@@ -74,22 +74,22 @@ junc_alert(Car,Junction)->
   end.
   
 clear_path(Car,Close_Car)->
-  [_CarNumber1,_Road1,{Cx1,Cy1},_Speed,Dir1,_Color]=ets:lookup(cars,Car), %Car details
+  [{_CarNumber1,_Road1,{Cx1,Cy1},_Speed,Dir1,_Color}]=ets:lookup(cars,Car), %Car details
   Bool=ets:member(cars,Close_Car),
   if Bool==true->
-       [_CarNumber2,_Road2,{Cx2,Cy2},_Speed,_Dir2,_Color]=ets:lookup(cars,Close_Car),
+       [{_CarNumber2,_Road2,{Cx2,Cy2},_Speed,_Dir2,_Color}]=ets:lookup(cars,Close_Car),
   case Dir1 of
-    north->
+    south->
       if
-        (Cy2-Cy1>50) and (Cy2-Cy1>0) ->
+        (Cy2-Cy1>70) and (Cy2-Cy1>0) ->
           cars:clear_path(Car);
         true->
           timer:sleep(50),
           clear_path(Car,Close_Car)
       end;
-    south->
+    north->
       if
-        (Cy1-Cy2>50) and (Cy1-Cy2>0) ->
+        (Cy1-Cy2>70) and (Cy1-Cy2>0) ->
           cars:clear_path(Car);
         true->
           timer:sleep(50),
@@ -97,7 +97,7 @@ clear_path(Car,Close_Car)->
       end;
     west->
       if
-        (Cx1-Cx2<25 )and( Cx1-Cx2>0) ->
+        (Cx1-Cx2<70 )and( Cx1-Cx2>0) ->
           cars:clear_path(Car);
           true->
             timer:sleep(50),
@@ -105,7 +105,7 @@ clear_path(Car,Close_Car)->
           end;
     east->
       if
-        (Cx1-Cx2<25) and (Cx1-Cx2>0 )->
+        (Cx1-Cx2<70) and (Cx1-Cx2>0 )->
           cars:clear_path(Car);
         true->
           timer:sleep(50),
@@ -119,47 +119,47 @@ car_alert(Car,'$end_of_table')->
   car_alert(Car,ets:first(cars));
 
 car_alert(Car,P_car)->
-  [{_CarNumber1,Road1,{Cx1,Cy1},_Speed1,_Dir1,_Color1}]=ets:lookup(cars,Car), %get car details
+  [{CarNumber1,Road1,{Cx1,Cy1},_Speed1,_Dir1,_Color1}]=ets:lookup(cars,Car), %get car details
   Alive=ets:member(cars,P_car),
   if
     Alive=:=true->
-      [{_CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,P_car);
+      [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,P_car);
     true->
-      [{_CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,ets:first(cars))
+      [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,ets:first(cars))
   end,
-  case Road1==Road2 of
+  case (Road1==Road2) and(CarNumber1=/=CarNumber2) of
     true->
       case _Dir1 of
-        north->
+        south->
           if
-            (Cy2-Cy1<25) and (Cy2-Cy1>0 )->
+            (Cy2-Cy1<50) and (Cy2-Cy1>0 )->
               cars:car_alert(Car,P_car),
-              timer:sleep(500),
+              timer:sleep(1000),
               car_alert(Car,ets:first(cars));
             true->
               car_alert(Car,ets:next(cars,P_car))
           end;
-        south->
+        north->
           if
-            (Cy1-Cy2<25 )and( Cy1-Cy2>0 )->
+            (Cy1-Cy2<50 )and( Cy1-Cy2>0 )->
               cars:car_alert(Car,P_car),
-              timer:sleep(500),
+              timer:sleep(1000),
               car_alert(Car,ets:first(cars));
             true->
               car_alert(Car,ets:next(cars,P_car))
           end;
         west->
           if
-            (Cx1-Cx2<25) and (Cx1-Cx2>0) ->
+            (Cx1-Cx2<50) and (Cx1-Cx2>0) ->
               cars:car_alert(Car,P_car),
-              timer:sleep(500),
+              timer:sleep(1000),
               car_alert(Car,ets:first(cars));
             true->
               car_alert(Car,ets:next(cars,P_car))
           end;
         east->
           if
-            (Cx1-Cx2<25) and( Cx1-Cx2>0 )->
+            (Cx1-Cx2<50) and( Cx1-Cx2>0 )->
               cars:car_alert(Car,P_car),
               timer:sleep(500),
               car_alert(Car,ets:first(cars));
@@ -181,22 +181,22 @@ tl_alert(Car,Junction)->
   case Road==R1 orelse Road==R2 of %if the car is on the same road of the junction
     true-> %same road
       case Dir of
-        north-> %car is moving north
+        south-> %car is moving north
           case (Jy-Cy<25) and (Jy-Cy>0) of   %check if car is near the junction, and didn't already passed it.
             true->
               {Color,0}=sys:get_state(TLPid),
               cars:tl_alert(Car,Color),
-              timer:sleep(1500),
+              timer:sleep(200),
               tl_alert(Car,ets:first(traffic_light));
             _->
               tl_alert(Car,ets:next(traffic_light,Junction))
           end;
-        south-> %car is moving north
+        north-> %car is moving north
           case (Cy-Jy<25) and (Cy-Jy>0) of   %check if car is near the junction, and didn't already passed it.
             true->
               {Color,0}=sys:get_state(TLPid),
               cars:tl_alert(Car,Color),
-              timer:sleep(1500),
+              timer:sleep(200),
               tl_alert(Car,ets:first(traffic_light));
             _->
               tl_alert(Car,ets:next(traffic_light,Junction))
@@ -206,7 +206,7 @@ tl_alert(Car,Junction)->
             true->
               {Color,0}=sys:get_state(TLPid),
               cars:tl_alert(Car,Color),
-              timer:sleep(1500),
+              timer:sleep(200),
               tl_alert(Car,ets:first(traffic_light));
             _->
               tl_alert(Car,ets:next(traffic_light,Junction))
@@ -216,7 +216,7 @@ tl_alert(Car,Junction)->
             true->
               {Color,0}=sys:get_state(TLPid),
               cars:tl_alert(Car,Color),
-              timer:sleep(1500),
+              timer:sleep(200),
               tl_alert(Car,ets:first(traffic_light));
             _->
               tl_alert(Car,ets:next(traffic_light,Junction))
