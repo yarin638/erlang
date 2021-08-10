@@ -58,7 +58,7 @@ handle_sync_event(#wx{event=#wxPaint{}}, _,  _State = #state{panel=MyPanel,map=M
   wxDC:clear(DC),
   wxDC:drawBitmap(DC,Map,{0,0}),
   %wxDC:drawBitmap(DC,RedCarE,{1,1}),
-  cars_movement(MyPanel,RedCarN,RedCarW,RedCarE,RedCarS,BlueCarN,BlueCarW,BlueCarE,BlueCarS,ets:first(cars));
+  cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,ets:first(cars));
 
 handle_sync_event(_Event,_,State) ->
   {noreply, State}.

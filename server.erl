@@ -43,12 +43,13 @@ start_link() ->
   {stop, Reason :: term()} | ignore).
 init([]) ->
   ets:new(cars,[set,public,named_table]), ets:new(junction,[set,public,named_table]),ets:new(traffic_light,[set,public,named_table]),
- ets:insert(junction,{{1130,105},[0,1],[west,north,east,south]}),
+  ets:insert(junction,{{1130,105},[0,1],[2,3],[east,north]}),
   %ets:lookup(junction,{1,7}),
-  traffic_light:start({1137,100},t1),
-  cars:start(yarn,1100,120),
-  cars:start(eliav,1100,200),
-  %cars:start(eliav,1,5),
+  %traffic_light:start(0,{1137,100},t1),
+  traffic_light:start({0,1137,100,red},t1),
+  traffic_light:start({0,1110,100,red},t2),
+  cars:start(yarn,1100,300,north,0),
+  cars:start(eliav,900,100,east,1),
 
   {ok, #server_state{}}.
 

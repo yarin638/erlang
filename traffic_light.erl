@@ -18,8 +18,8 @@ name() -> pushbutton_statem. % The registered server name
 
 %% API.  This example uses a registered name name()
 %% and does not link to the caller.
-start({X,Y},Name) ->% insert junction to ets and go to red
-  gen_statem:start({local,Name}, ?MODULE, [{X,Y}], []).
+start({R,X,Y,Color},Name) ->% insert junction to ets and go to red
+  gen_statem:start({local,Name}, ?MODULE, [{R,X,Y,Color}], []).
 push(Name) ->
   gen_statem:call(Name, push).
 
@@ -33,10 +33,10 @@ terminate(_Reason, _State, _Data) ->
   void.
 code_change(_Vsn, State, Data, _Extra) ->
   {ok,State,Data}.
-init([{X,Y}]) ->
+init([{R,X,Y,Color}]) ->
   %% Set the initial state + data.  Data is used only as a counter.
-  State = red, Data = 0,
-  ets:insert(traffic_light,{{0,0},{X,Y},self()}),
+  State = Color, Data = 0,
+  ets:insert(traffic_light,{R,{X,Y},self()}),
   {ok,State,Data,5000}.
 callback_mode() -> state_functions.
 
@@ -61,10 +61,10 @@ red(EventType, EventContent, Data) ->
   handle_event(EventType, EventContent, Data).
 
 
-yellow({call,From}, push, Data) ->
+yellow(timeout, 5000,  Data) ->
   %% Go to 'on', increment count and reply
   %% that the resulting status is 'on'
-  {next_state,green,Data+1,[{reply,From,green}]};
+  {next_state,green,Data+1,[{timeout,5000,lock}]};
 
 yellow(timeout, lock,  Data) ->
   io:format("green~n"),
@@ -73,9 +73,9 @@ yellow(timeout, lock,  Data) ->
 yellow(EventType, EventContent, Data) ->
   handle_event(EventType, EventContent, Data).
 
-green({call,From}, push, Data) ->
+green(timeout, 5000,  Data) ->
   %% Go to 'off' and reply that the resulting status is 'off'
-  {next_state,red,Data,[{reply,From,red}]};
+  {next_state,red,Data,[{timeout,5000,lock}]};
 
 green(timeout, lock,  Data) ->
   io:format("red~n"),

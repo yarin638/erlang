@@ -25,17 +25,17 @@ junc_alert(Car,'$end_of_table')-> %check if car is close to junction
   junc_alert(Car,ets:first(junction));
 junc_alert(Car,Junction)->
   [{_CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Car), %car details
-  [{{Jx,Jy},RoadList,DirList}]=ets:lookup(junction,Junction), %junction details
-  Bool=lists:member(Road,RoadList), %check if the car is on the same road as the junction
+  [{{Jx,Jy},RoadListin,RoadListout,DirList}]=ets:lookup(junction,Junction), %junction details
+  Bool=lists:member(Road,RoadListin), %check if the car is on the same road as the junction
   case Bool of
     false->
       junc_alert(Car,ets:next(junction,Junction)); %if not, check next junction
     true->
       NewDir=turn_where(Dir,DirList), %if it does, decide to where it should turn, even if it not close to the junction.
-      NewRoad=find_road(NewDir,DirList,RoadList),
+      NewRoad=find_road(NewDir,DirList,RoadListout),
       case Dir of
         south-> %car is moving north
-          case (Jy-Cy<25) and (Jy-Cy>0) of   %check if car is near the junction, and didn't already passed it.
+          case (Jy-Cy<5) and (Jy-Cy>0) of   %check if car is near the junction, and didn't already passed it.
             true->
               cars:junc_alert(Car,NewDir,NewRoad), %send event
               timer:sleep(1000),
@@ -44,7 +44,7 @@ junc_alert(Car,Junction)->
               junc_alert(Car,ets:next(junction,Junction))
           end;
         north-> %car is moving north
-          case (Cy-Jy<25) and(Cy-Jy>0) of   %check if car is near the junction, and didn't already passed it.
+          case (Cy-Jy<5) and(Cy-Jy>0) of   %check if car is near the junction, and didn't already passed it.
             true->
               cars:junc_alert(Car,NewDir,NewRoad), %send event
               timer:sleep(1000),
@@ -53,7 +53,7 @@ junc_alert(Car,Junction)->
               junc_alert(Car,ets:next(junction,Junction))
           end;
         west-> %car is moving north
-          case (Cx-Jx<25) and (Cx-Jx>0) of   %check if car is near the junction, and didn't already passed it.
+          case (Cx-Jx<5) and (Cx-Jx>0) of   %check if car is near the junction, and didn't already passed it.
             true->
               cars:junc_alert(Car,NewDir,NewRoad), %send event
               timer:sleep(1000),
@@ -62,7 +62,7 @@ junc_alert(Car,Junction)->
               junc_alert(Car,ets:next(junction,Junction))
           end;
         east-> %car is moving north
-          case (Jx-Cx<25) and (Jx-Cx>0) of   %check if car is near the junction, and didn't already passed it.
+          case (Jx-Cx<5) and (Jx-Cx>0) of   %check if car is near the junction, and didn't already passed it.
             true->
               cars:junc_alert(Car,NewDir,NewRoad), %send event
               timer:sleep(1000),
@@ -177,8 +177,8 @@ tl_alert(Car,'$end_of_table')-> % start
 
 tl_alert(Car,Junction)->
   [{_CarNumber,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Car), %get car details
-  [{{R1,R2},{Jx,Jy},TLPid}]=ets:lookup(traffic_light,Junction), %get first junction details
-  case Road==R1 orelse Road==R2 of %if the car is on the same road of the junction
+  [{R1,{Jx,Jy},TLPid}]=ets:lookup(traffic_light,Junction), %get first junction details
+  case Road==R1  of %if the car is on the same road of the junction
     true-> %same road
       case Dir of
         south-> %car is moving north
