@@ -47,7 +47,7 @@ init([]) ->
   %ets:lookup(junction,{1,7}),
   %traffic_light:start(0,{1137,100},t1),
   traffic_light:start({0,1137,100,red},t1),
-  traffic_light:start({1,1110,100,red},t2),
+  traffic_light:start({1,1055,100,green},t2),
   cars:start(yarn,1100,300,north,0),
   cars:start(eliav,900,100,east,1),
 
