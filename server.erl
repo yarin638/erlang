@@ -41,15 +41,17 @@ start_link() ->
 -spec(init(Args :: term()) ->
   {ok, State :: #server_state{}} | {ok, State :: #server_state{}, timeout() | hibernate} |
   {stop, Reason :: term()} | ignore).
+%%%events
+%start_car(Name,X,Y,Dir,Road)-> gen_server:cast(?MODULE,{start_car,Name,X,Y,Dir,Road}). % initialize car process
+%start_car(Name,X,Y,Dir,Road)-> gen_server:cast(?MODULE,{start_car,Name,X,Y,Dir,Road}). % initialize car process
+%%%%%%%%%
 init([]) ->
   ets:new(cars,[set,public,named_table]), ets:new(junction,[set,public,named_table]),ets:new(traffic_light,[set,public,named_table]),
-  ets:insert(junction,{{1130,105},[0,1],[2,3],[east,north]}),
+  %ets:insert(junction,{{1130,105},[0,1],[2,3],[east,north]}),
   %ets:lookup(junction,{1,7}),
   %traffic_light:start(0,{1137,100},t1),
-  traffic_light:start({0,1137,100,red},t1),
-  traffic_light:start({1,1055,100,green},t2),
-  cars:start(yarn,1100,300,north,0),
-  cars:start(eliav,900,100,east,1),
+  %traffic_light:start({0,1137,100,red},t1),
+  %traffic_light:start({1,1055,100,green},t2),
 
   {ok, #server_state{}}.
 
@@ -63,17 +65,32 @@ init([]) ->
   {noreply, NewState :: #server_state{}, timeout() | hibernate} |
   {stop, Reason :: term(), Reply :: term(), NewState :: #server_state{}} |
   {stop, Reason :: term(), NewState :: #server_state{}}).
-handle_call(_Request, _From, State = #server_state{}) ->
-  {reply, ok, State}.
+handle_call(firstcar, _From, State) ->
+  CarTosend=ets:lookup(cars,ets:first(cars)),
+  {reply,CarTosend, State};
 
+handle_call({nextcar,Car}, _From, State) ->
+  CarTosend=ets:lookup(cars,ets:next(cars,Car)),
+  {reply,CarTosend, State}.
 %% @private
+
+
 %% @doc Handling cast messages
 -spec(handle_cast(Request :: term(), State :: #server_state{}) ->
   {noreply, NewState :: #server_state{}} |
   {noreply, NewState :: #server_state{}, timeout() | hibernate} |
   {stop, Reason :: term(), NewState :: #server_state{}}).
-handle_cast(_Request, State = #server_state{}) ->
+
+handle_cast({start_car,Name,X,Y,Dir,Road}, State) ->
+  cars:start(Name,X,Y,Dir,Road),
+  {noreply, State};
+handle_cast({start_traffic_light,Road,X,Y,Color,Name}, State) ->
+  traffic_light:start({Road,X,Y,Color},Name),
+  {noreply, State};
+handle_cast({start_junc,Cord,RoadlisIn,Roadlisout,Dirlist}, State) ->
+  ets:insert(junction,{Cord,RoadlisIn,Roadlisout,Dirlist}),
   {noreply, State}.
+
 
 %% @private
 %% @doc Handling all non call/cast messages

@@ -49,11 +49,11 @@ callback_mode() -> state_functions.
   %{next_state,yellow,Data+1,[{state_timeout,3000,lock}]};
 
 red(timeout, 5000,  Data) ->
- io:format("yellow~n"),
+ %io:format("yellow~n"),
   {next_state, yellow, Data, [{timeout,5000,lock}]};
 
 red(timeout, lock,  Data) ->
-  io:format("yellow~n"),
+  %io:format("yellow~n"),
   {next_state, yellow, Data,[{timeout,5000,lock}]};
 
 
@@ -67,7 +67,7 @@ yellow(timeout, 5000,  Data) ->
   {next_state,green,Data+1,[{timeout,5000,lock}]};
 
 yellow(timeout, lock,  Data) ->
-  io:format("green~n"),
+  %io:format("green~n"),
   {next_state, green, Data,[{timeout,5000,lock}]};
 
 yellow(EventType, EventContent, Data) ->
@@ -78,7 +78,7 @@ green(timeout, 5000,  Data) ->
   {next_state,red,Data,[{timeout,5000,lock}]};
 
 green(timeout, lock,  Data) ->
-  io:format("red~n"),
+  %io:format("red~n"),
   {next_state, red, Data,[{timeout,5000,lock}]};
 
 green(EventType, EventContent, Data) ->
