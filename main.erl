@@ -8,14 +8,14 @@
 %%%-------------------------------------------------------------------
 -module(main).
 -author("eliav").
-
+-include("header.hrl").
 -behaviour(wx_object).
 -include_lib("wx/include/wx.hrl").
 -define(SERVER, ?MODULE).
--define(Server1, 'eliav4670@yarinabutbul-VirtualBox').
--define(Server2, 'eliav4670@yarinabutbul-VirtualBox').
--define(Server3, 'eliav4670@yarinabutbul-VirtualBox').
--define(Server4, 'eliav4670@yarinabutbul-VirtualBox').
+%-define(Server1, 'eliav4670@yarinabutbul-VirtualBox').
+%-define(Server2, 'eliav4670@yarinabutbul-VirtualBox').
+%-define(Server3, 'eliav4670@yarinabutbul-VirtualBox').
+%-define(Server4, 'eliav4670@yarinabutbul-VirtualBox').
 
 -export([start/0,init/1,handle_event/2,handle_info/2,handle_sync_event/3]).
 -define(Mx,781).
@@ -29,7 +29,13 @@ start() ->
 
 init([])->
   net_kernel:connect_node(?Server1),
+  net_kernel:connect_node(?Server2),
+  net_kernel:connect_node(?Server3),
+  net_kernel:connect_node(?Server4),
   rpc:call(?Server1,server,start_link,[]),
+  rpc:call(?Server2,server,start_link,[]),
+  rpc:call(?Server3,server,start_link,[]),
+  rpc:call(?Server4,server,start_link,[]),
   %%start traffic_light%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   gen_server:cast({server,?Server1},{start_traffic_light,1,120,95,red,t1}),
   gen_server:cast({server,?Server1},{start_traffic_light,2,175,40,green,t2}),
@@ -72,15 +78,15 @@ init([])->
 
   %%%%start cars%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %gen_server:cast({server,?Server1},{start_car,yarin,175,10,south,2}),
-  gen_server:cast({server,?Server1},{start_car,lotke,550,95,east,6}),
-  gen_server:cast({server,?Server1},{start_car,elioz,0,520,east,11}),
-  gen_server:cast({server,?Server1},{start_car,eliav,480,95,east,6}),
-  gen_server:cast({server,?Server1},{start_car,yanir,450,220,west,33}),
+  gen_server:cast({server,?Server4},{start_car,lotke,550,95,east,6}),
+  gen_server:cast({server,?Server2},{start_car,elioz,0,520,east,11}),
+  gen_server:cast({server,?Server4},{start_car,eliav,480,95,east,6}),
+  gen_server:cast({server,?Server4},{start_car,yanir,450,220,west,33}),
 %  gen_server:cast({server,?Server1},{start_car,meitar,570,635,east,18}),
  % gen_server:cast({server,?Server1},{start_car,tal,300,95,east,4}),
  % gen_server:cast({server,?Server1},{start_car,daniela,200,345,east,10}),
-  gen_server:cast({server,?Server1},{start_car,naema,320,520,east,14}),
-  gen_server:cast({server,?Server1},{start_car,raviv,405,430,south,15}),
+  gen_server:cast({server,?Server3},{start_car,naema,320,520,east,14}),
+  gen_server:cast({server,?Server3},{start_car,raviv,405,430,south,15}),
  % gen_server:cast({server,?Server1},{start_car,hadar,175,250,south,3}),
  % gen_server:cast({server,?Server1},{start_car,shahar,645,300,north,7}),
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,15 +124,22 @@ handle_sync_event(#wx{event=#wxPaint{}}, _,  _State = #state{panel=MyPanel,map=M
   wxDC:clear(DC),
   wxDC:drawBitmap(DC,Map,{0,0}),
   %wxDC:drawBitmap(DC,RedCarE,{1,1}),
-  Car=gen_server:call({server,?Server1},firstcar),
-  cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,Car);
+  CarS1=gen_server:call({server,?Server1},firstcar),
+  CarS2=gen_server:call({server,?Server2},firstcar),
+  CarS3=gen_server:call({server,?Server3},firstcar),
+  CarS4=gen_server:call({server,?Server4},firstcar),
+  cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS1,?Server1),
+  cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS2,?Server2),
+  cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS3,?Server3),
+  cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS4,?Server4);
+
 
 handle_sync_event(_Event,_,State) ->
   {noreply, State}.
 
-cars_movement(_,_,_,_,_,_,_,_,_,[])->
+cars_movement(_,_,_,_,_,_,_,_,_,[],_)->
   ok;
-cars_movement(Panel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,Car)->
+cars_movement(Panel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,Car,ServerN)->
   DC=wxClientDC:new(Panel),
   [{CarNumber1,_Road,{Cx,Cy},_Speed,Dir,Color}]=Car,
   %io:format("~p",[ets:lookup(cars,Car)]),
@@ -154,9 +167,9 @@ cars_movement(Panel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,B
           wxDC:drawBitmap(DC,BlueCarW,{Cx,Cy})
       end
   end,
-  NextCar=gen_server:call({server,?Server1},{nextcar,CarNumber1}),
+  NextCar=gen_server:call({server,ServerN},{nextcar,CarNumber1}),
 %  io:format("Nextcar=~p",[NextCar]),
-  cars_movement(Panel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,NextCar).
+  cars_movement(Panel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,NextCar,ServerN).
 
 createMap()->
   %create Map

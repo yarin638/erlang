@@ -10,15 +10,19 @@
 -author("eliav").
 
 -behaviour(gen_statem).
-
+-include("header.hrl").
 -define(SERVER, ?MODULE).
+%-define(Server1, 'eliav4670@yarinabutbul-VirtualBox').
+%-define(Server2, 'eliav4670@yarinabutbul-VirtualBox').
+%-define(Server3, 'eliav4670@yarinabutbul-VirtualBox').
+%-define(Server4, 'eliav4670@yarinabutbul-VirtualBox').
 %% API
 %%gen_state functions%%
 -export([start_link/0,terminate/3,code_change/4,callback_mode/0,start/5,init/1]).
 %states
 -export([stright/3,stooping/3]).
 %events
--export([junc_alert/3,car_alert/2,timeout/1,clear_path/1,turn_south/1,turn_north/1,turn_east/1,turn_west/1,traffic_light_red/1,traffic_light_orange/1,traffic_light_green/1,stop/0,tl_alert/2]).
+-export([junc_alert/3,car_alert/2,timeout/1,clear_path/1,turn_south/1,turn_north/1,turn_east/1,turn_west/1,traffic_light_red/1,traffic_light_orange/1,traffic_light_green/1,stop/1,tl_alert/2,switch_area/2]).
 
 start_link() ->
   gen_statem:start_link({local, ?SERVER}, ?MODULE, [], []).
@@ -38,6 +42,7 @@ init([Cname,X,Y,Cname,Dir,Road])->%spwan all the sensors
   SensorPid = spawn(alerts,junc_alert,[Cname,ets:first(junction)]), % spawn all car sensors, add them to their ets and put them in process dictionary
   SensorPid2 = spawn(alerts,tl_alert,[Cname,ets:first(traffic_light)]), % spawn all car sensors, add them to their ets and put them in process dictionary
   SensorPid3 = spawn(alerts,car_alert,[Cname,ets:first(cars)]),
+  SensorPid4 = spawn(alerts,switch_area,[Cname]),
   {ok,stright,Data,50}.
 terminate(_Reason, _State, _Data) ->
   void.
@@ -88,14 +93,23 @@ traffic_light_orange(Car)->gen_statem:call(Car, traffic_light_orange).
 
 traffic_light_green(Car)->gen_statem:call(Car, traffic_light_green).
 
-stop() ->
-  gen_statem:stop(get(cname)).
+switch_area(Car,server1)-> [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Car),gen_server:cast({server,?Server1},{start_car,CarNumber1,Cx,Cy,Dir,Road},
+                          ets:delete(cars,Car)),stop(Car);
+switch_area(Car,server2)-> [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Car),gen_server:cast({server,?Server2},{start_car,CarNumber1,Cx,Cy,Dir,Road},
+  ets:delete(cars,Car)),stop(Car);
+switch_area(Car,server3)-> [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Car),gen_server:cast({server,?Server3},{start_car,CarNumber1,Cx,Cy,Dir,Road},
+  ets:delete(cars,Car)),stop(Car);
+switch_area(Car,server4)-> [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Car),gen_server:cast({server,?Server4},{start_car,CarNumber1,Cx,Cy,Dir,Road},
+  ets:delete(cars,Car)),stop(Car).
+
+stop(Car) ->
+  gen_statem:stop(Car).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%states%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 stright({call,From}, clear_path, Data) ->
   {X,Y,Dir,Cname}=Data,
-  %io:format("{~p,~p,~p, ets:~p}",[X,Y,Dir,ets:lookup(cars,Cname)]),
+  io:format("{~p,~p,~p, ets:~p}",[X,Y,Dir,ets:lookup(cars,Cname)]),
   if
     Dir==south-> ets:update_element(cars,Cname,[{3,{X,Y+1}},{5,south}]),{keep_state,{X,Y+1,Dir,Cname},[{state_timeout,50,time}]};
     Dir==north->  ets:update_element(cars,Cname,[{3,{X,Y-1}},{5,north}]),{keep_state,{X,Y-1,Dir,Cname},[{state_timeout,50,time}]};
@@ -104,7 +118,7 @@ stright({call,From}, clear_path, Data) ->
 
 stright(state_timeout, time,  Data) ->
   {X,Y,Dir,Cname}=Data,
-  %io:format("{~p,~p,~p, ets:~p}",[X,Y,Dir,ets:lookup(cars,Cname)]),
+  io:format("{~p,~p,~p, ets:~p}",[X,Y,Dir,ets:lookup(cars,Cname)]),
   if
     Dir==south->  ets:update_element(cars,Cname,[{3,{X,Y+1}},{5,south}]),{keep_state,{X,Y+1,Dir,Cname},[{state_timeout,50,time}]};
     Dir==north-> ets:update_element(cars,Cname,[{3,{X,Y-1}},{5,north}]),{keep_state,{X,Y-1,Dir,Cname},[{state_timeout,50,time}]};
@@ -113,7 +127,7 @@ stright(state_timeout, time,  Data) ->
 
 stright(timeout, 50,  Data) ->
   {X,Y,Dir,Cname}=Data,
-  %io:format("{~p,~p,~p, ets:~p}",[X,Y,Dir,ets:lookup(cars,Cname)]),
+  io:format("{~p,~p,~p, ets:~p}",[X,Y,Dir,ets:lookup(cars,Cname)]),
   if
     Dir==south-> ets:update_element(cars,Cname,[{3,{X,Y+1}},{5,south}]),{keep_state,{X,Y+1,Dir,Cname},[{state_timeout,50,time}]};
     Dir==north->ets:update_element(cars,Cname,[{3,{X,Y-1}},{5,north}]),{keep_state,{X,Y-1,Dir,Cname},[{state_timeout,50,time}]};

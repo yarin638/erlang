@@ -8,9 +8,11 @@
 %%%-------------------------------------------------------------------
 -module('alerts').
 -author("eliav").
+-define(X_center,300).
+-define(Y_center,410).
 
 %% API
--export([out_of_map/1,tl_alert/2,car_alert/2,junc_alert/2,clear_path/2]).
+-export([out_of_map/1,tl_alert/2,car_alert/2,junc_alert/2,clear_path/2,switch_area/1]).
 
 out_of_map(Car)-> %check if Car is out of map.
   [_CarNumber1,_Road1,{X1,Y1},_Speed,_Dir1,_Color]=ets:lookup(cars,Car),
@@ -226,6 +228,55 @@ tl_alert(Car,Junction)->
       tl_alert(Car,ets:next(traffic_light,Junction))
   end.
 
+
+switch_area(Car)->
+  [{_CarNumber,_Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Car),
+  case Dir of
+    south->
+      if
+        (Cx<?X_center) and (Cy<?Y_center)  and (?Y_center-Cy)<25->
+          cars:switch_area(Car,server2),
+          timer:sleep(1000);
+        (Cx>?X_center) and (Cy<?Y_center)  and (?Y_center-Cy)<25->
+          cars:switch_area(Car,server3),
+          timer:sleep(300);
+        true->
+          switch_area(Car)
+      end;
+    north->
+      if
+        (Cx<?X_center) and (Cy>?Y_center)  and (Cy-?Y_center)<25->
+          cars:switch_area(Car,server1),
+          timer:sleep(1000);
+        (Cx>?X_center) and (Cy>?Y_center)  and (Cy-?Y_center)<25->
+          cars:switch_area(Car,server4),
+          timer:sleep(300);
+        true->
+          switch_area(Car)
+      end;
+    east->
+      if
+        (Cx<?X_center) and (Cy>?Y_center)  and (?X_center-Cx)<25->
+          cars:switch_area(Car,server3),
+          timer:sleep(1000);
+        (Cx<300) and (Cy<410) -> %and (300-Cx)<25->
+          cars:switch_area(Car,server4),
+          timer:sleep(300);
+        true->
+          switch_area(Car)
+      end;
+    west->
+      if
+        (Cx>?X_center) and (Cy>?Y_center)  and (Cx-?X_center)<25->
+          cars:switch_area(Car,server2),
+          timer:sleep(1000);
+        (Cx>?X_center) and (Cy<?Y_center)  and (Cx-?X_center)<25->
+          cars:switch_area(Car,server1),
+          timer:sleep(300);
+        true->
+          switch_area(Car)
+      end
+  end.
 
 %%%%%%%subfunc
 
