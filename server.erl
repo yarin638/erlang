@@ -49,8 +49,8 @@ init([]) ->
   ets:new(cars,[set,public,named_table]), ets:new(junction,[set,public,named_table]),ets:new(traffic_light,[set,public,named_table]),
   %ets:insert(junction,{{1130,105},[0,1],[2,3],[east,north]}),
   %ets:lookup(junction,{1,7}),
-  %cars:start(yarin,290,300,east,0),
-  %ets:insert(cars,{yarin,0,{290,400},0,east,red}),
+ %cars:start(yan,200,600,east,0),
+ % ets:insert(cars,{yarin,0,{290,400},0,east,red}),
   %spawn(alerts,switch_area,[yarin]),
   %traffic_light:start(0,{1137,100},t1),
   %traffic_light:start({0,1137,100,red},t1),
@@ -85,6 +85,7 @@ handle_call({nextcar,Car}, _From, State) ->
   {stop, Reason :: term(), NewState :: #server_state{}}).
 
 handle_cast({start_car,Name,X,Y,Dir,Road}, State) ->
+  %io:format("car started:~p,~p,~p,~p",[Name,X,Y,Dir]),
   cars:start(Name,X,Y,Dir,Road),
   {noreply, State};
 handle_cast({start_traffic_light,Road,X,Y,Color,Name}, State) ->

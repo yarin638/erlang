@@ -26,6 +26,11 @@ out_of_map(Car)-> %check if Car is out of map.
 junc_alert(Car,'$end_of_table')-> %check if car is close to junction
   junc_alert(Car,ets:first(junction));
 junc_alert(Car,Junction)->
+  Bool2=ets:member(cars,Car),
+  case Bool2 of
+    false->
+      ok;
+    true->
   [{_CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Car), %car details
   [{{Jx,Jy},RoadListin,RoadListout,DirList}]=ets:lookup(junction,Junction), %junction details
   Bool=lists:member(Road,RoadListin), %check if the car is on the same road as the junction
@@ -73,6 +78,7 @@ junc_alert(Car,Junction)->
               junc_alert(Car,ets:next(junction,Junction))
           end
       end
+  end
   end.
   
 clear_path(Car,Close_Car)->
@@ -121,12 +127,19 @@ car_alert(Car,'$end_of_table')->
   car_alert(Car,ets:first(cars));
 
 car_alert(Car,P_car)->
+  Bool2=ets:member(cars,Car),
+  case Bool2 of
+    false->
+      ok;
+    true->
+      %io:format("~p",[ets:lookup(cars,Car)]),
   [{CarNumber1,Road1,{Cx1,Cy1},_Speed1,_Dir1,_Color1}]=ets:lookup(cars,Car), %get car details
   Alive=ets:member(cars,P_car),
   if
     Alive=:=true->
       [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,P_car);
     true->
+
       [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,ets:first(cars))
   end,
   case (Road1==Road2) and(CarNumber1=/=CarNumber2) of
@@ -148,6 +161,7 @@ car_alert(Car,P_car)->
               timer:sleep(1000),
               car_alert(Car,ets:first(cars));
             true->
+          %  io:format("~p",[P_car]),
               car_alert(Car,ets:next(cars,P_car))
           end;
         west->
@@ -171,6 +185,7 @@ car_alert(Car,P_car)->
       end;
     false->
       car_alert(Car,ets:next(cars,P_car))
+  end
   end.
 
 
@@ -178,6 +193,11 @@ tl_alert(Car,'$end_of_table')-> % start
   tl_alert(Car,ets:first(traffic_light));
 
 tl_alert(Car,Junction)->
+  Bool2=ets:member(cars,Car),
+  case Bool2 of
+    false->
+      ok;
+    true->
   [{_CarNumber,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Car), %get car details
   [{R1,{Jx,Jy},TLPid}]=ets:lookup(traffic_light,Junction), %get first junction details
   case Road==R1  of %if the car is on the same road of the junction
@@ -226,6 +246,7 @@ tl_alert(Car,Junction)->
       end;
     false->
       tl_alert(Car,ets:next(traffic_light,Junction))
+  end
   end.
 
 
@@ -234,10 +255,10 @@ switch_area(Car)->
   case Dir of
     south->
       if
-        (Cx<?X_center) and (Cy<?Y_center)  and (?Y_center-Cy)<25->
+        Cx<?X_center , Cy<?Y_center , (?Y_center-Cy)<5->
           cars:switch_area(Car,server2),
           timer:sleep(1000);
-        (Cx>?X_center) and (Cy<?Y_center)  and (?Y_center-Cy)<25->
+        Cx>?X_center ,Cy<?Y_center,(?Y_center-Cy)<5->
           cars:switch_area(Car,server3),
           timer:sleep(300);
         true->
@@ -245,10 +266,10 @@ switch_area(Car)->
       end;
     north->
       if
-        (Cx<?X_center) and (Cy>?Y_center)  and (Cy-?Y_center)<25->
+        Cx<?X_center , Cy>?Y_center,(Cy-?Y_center)<5->
           cars:switch_area(Car,server1),
           timer:sleep(1000);
-        (Cx>?X_center) and (Cy>?Y_center)  and (Cy-?Y_center)<25->
+        Cx>?X_center,Cy>?Y_center , (Cy-?Y_center)<5->
           cars:switch_area(Car,server4),
           timer:sleep(300);
         true->
@@ -256,10 +277,10 @@ switch_area(Car)->
       end;
     east->
       if
-        (Cx<?X_center) and (Cy>?Y_center)  and (?X_center-Cx)<25->
+        Cx<?X_center,Cy>?Y_center,(?X_center-Cx)<5->
           cars:switch_area(Car,server3),
           timer:sleep(1000);
-        (Cx<300) and (Cy<410) -> %and (300-Cx)<25->
+        Cx<?X_center , Cy<?Y_center,(?X_center-Cx)<5 ->
           cars:switch_area(Car,server4),
           timer:sleep(300);
         true->
@@ -267,10 +288,10 @@ switch_area(Car)->
       end;
     west->
       if
-        (Cx>?X_center) and (Cy>?Y_center)  and (Cx-?X_center)<25->
+        Cx>?X_center,Cy>?Y_center,(Cx-?X_center)<5->
           cars:switch_area(Car,server2),
           timer:sleep(1000);
-        (Cx>?X_center) and (Cy<?Y_center)  and (Cx-?X_center)<25->
+        Cx>?X_center,Cy<?Y_center,(Cx-?X_center)<5->
           cars:switch_area(Car,server1),
           timer:sleep(300);
         true->
