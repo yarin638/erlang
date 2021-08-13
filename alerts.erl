@@ -125,8 +125,7 @@ car_alert(Car,'$end_of_table')->
   car_alert(Car,ets:first(cars));
 
 car_alert(Car,P_car)->
-  %ets:member(cars,Car)
-  Bool10=false,
+  Bool10=ets:member(cars,Car),
   case Bool10 of
     false->car_alert(Car,P_car);
     true->
@@ -136,7 +135,7 @@ car_alert(Car,P_car)->
   if
     Alive=:=[]->
      [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,ets:first(cars));
-    true-> [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,P_car)
+    true-> [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=Alive
   end,
   case (Road1=:=Road2) and(CarNumber1=/=CarNumber2) of
     true->
