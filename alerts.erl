@@ -27,9 +27,7 @@ junc_alert(Car,'$end_of_table')-> %check if car is close to junction
   junc_alert(Car,ets:first(junction));
 junc_alert(Car,Junction)->
   Bool2=ets:member(cars,Car),
-  case Bool2 of
-    false->
-      ok;
+  case ets:member(cars,Car) of false-> ok;
     true->
   [{_CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Car), %car details
   [{{Jx,Jy},RoadListin,RoadListout,DirList}]=ets:lookup(junction,Junction), %junction details
@@ -127,22 +125,20 @@ car_alert(Car,'$end_of_table')->
   car_alert(Car,ets:first(cars));
 
 car_alert(Car,P_car)->
-  Bool2=ets:member(cars,Car),
-  case Bool2 of
-    false->
-      ok;
+  %ets:member(cars,Car)
+  Bool10=false,
+  case Bool10 of
+    false->car_alert(Car,P_car);
     true->
       %io:format("~p",[ets:lookup(cars,Car)]),
   [{CarNumber1,Road1,{Cx1,Cy1},_Speed1,_Dir1,_Color1}]=ets:lookup(cars,Car), %get car details
-  Alive=ets:member(cars,P_car),
+  Alive=ets:lookup(cars,P_car),
   if
-    Alive=:=true->
-      [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,P_car);
-    true->
-
-      [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,ets:first(cars))
+    Alive=:=[]->
+     [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,ets:first(cars));
+    true-> [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,P_car)
   end,
-  case (Road1==Road2) and(CarNumber1=/=CarNumber2) of
+  case (Road1=:=Road2) and(CarNumber1=/=CarNumber2) of
     true->
       case _Dir1 of
         south->
@@ -152,7 +148,8 @@ car_alert(Car,P_car)->
               timer:sleep(1000),
               car_alert(Car,ets:first(cars));
             true->
-              car_alert(Car,ets:next(cars,P_car))
+              if Alive=:=true->car_alert(Car,ets:next(cars,P_car));
+              true->car_alert(Car,ets:first(cars)) end
           end;
         north->
           if
@@ -162,7 +159,8 @@ car_alert(Car,P_car)->
               car_alert(Car,ets:first(cars));
             true->
           %  io:format("~p",[P_car]),
-              car_alert(Car,ets:next(cars,P_car))
+              if Alive=:=true->car_alert(Car,ets:next(cars,P_car));
+                true->car_alert(Car,ets:first(cars)) end
           end;
         west->
           if
@@ -171,7 +169,8 @@ car_alert(Car,P_car)->
               timer:sleep(1000),
               car_alert(Car,ets:first(cars));
             true->
-              car_alert(Car,ets:next(cars,P_car))
+              if Alive=:=true->car_alert(Car,ets:next(cars,P_car));
+                true->car_alert(Car,ets:first(cars)) end
           end;
         east->
           if
@@ -180,11 +179,15 @@ car_alert(Car,P_car)->
               timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->
-              car_alert(Car,ets:next(cars,P_car))
+              if Alive=:=true->car_alert(Car,ets:next(cars,P_car));
+                true->car_alert(Car,ets:first(cars)) end
           end
       end;
     false->
-      car_alert(Car,ets:next(cars,P_car))
+      Bool3=ets:lookup(cars,P_car),
+      if
+        Bool3=:=[]->car_alert(Car,ets:first(cars));
+        true->car_alert(Car,ets:next(cars,P_car)) end
   end
   end.
 
@@ -193,9 +196,7 @@ tl_alert(Car,'$end_of_table')-> % start
   tl_alert(Car,ets:first(traffic_light));
 
 tl_alert(Car,Junction)->
-  Bool2=ets:member(cars,Car),
-  case Bool2 of
-    false->
+  case ets:member(cars,Car) of false->
       ok;
     true->
   [{_CarNumber,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Car), %get car details
@@ -268,14 +269,13 @@ switch_area(Car,SensorPid,SensorPid2,SensorPid3)->
       end;
     north->
       if
-        Cx<?X_center , Cy>?Y_center,(Cy-?Y_center)<2->
+        Cx<?X_center , Cy>?Y_center,(Cy-?Y_center)<5->
           link(SensorPid),link(SensorPid2),link(SensorPid3),
           cars:switch_area(Car,server1),
           timer:sleep(1000);
-        Cx>?X_center,Cy>?Y_center , (Cy-?Y_center)<2->
-          io:format("move to 4"),
-          link(SensorPid),link(SensorPid2),link(SensorPid3),
-          io:format("linked"),
+        Cx>?X_center,Cy>?Y_center , (Cy-?Y_center)==5->
+          %io:format("move to 4"),
+          %io:format("linked"),
           cars:switch_area(Car,server4),
           timer:sleep(300);
         true->

@@ -77,19 +77,19 @@ init([])->
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %%%%start cars%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %gen_server:cast({server,?Server1},{start_car,yarin,175,10,south,2}),
-  %gen_server:cast({server,?Server4},{start_car,lotke,550,95,east,6}),
-  %gen_server:cast({server,?Server2},{start_car,elioz,0,520,east,11}),
-  %gen_server:cast({server,?Server4},{start_car,eliav,480,95,east,6}),
-  %gen_server:cast({server,?Server4},{start_car,yanir,450,220,west,33}),
-  %gen_server:cast({server,?Server3},{start_car,meitar,570,635,east,18}),
+  gen_server:cast({server,?Server1},{start_car,yarin,175,10,south,2}),
+  gen_server:cast({server,?Server4},{start_car,lotke,550,95,east,6}),
+  gen_server:cast({server,?Server2},{start_car,elioz,0,520,east,11}),
+  gen_server:cast({server,?Server4},{start_car,eliav,480,95,east,6}),
+  gen_server:cast({server,?Server4},{start_car,yanir,450,220,west,33}),
+ % gen_server:cast({server,?Server3},{start_car,meitar,570,635,east,18}),
   %gen_server:cast({server,?Server1},{start_car,tal,300,95,east,4}),
   %gen_server:cast({server,?Server1},{start_car,daniela,200,345,east,10}),
   %gen_server:cast({server,?Server3},{start_car,naema,320,520,east,14}),
-  %gen_server:cast({server,?Server3},{start_car,raviv,405,430,south,15}),
-  %gen_server:cast({server,?Server1},{start_car,hadar,175,250,south,3}),
-  gen_server:cast({server,?Server4},{start_car,shahar,645,850,north,22}),
-  %gen_server:cast({server,?Server4},{start_car,shaar,645,900,north,22}),
+ % gen_server:cast({server,?Server3},{start_car,raviv,405,430,south,15}),
+%  gen_server:cast({server,?Server1},{start_car,hadar,175,250,south,3}),
+  %en_server:cast({server,?Server4},{start_car,shahar,645,850,north,130}),
+  gen_server:cast({server,?Server4},{start_car,shaar,645,900,north,22}),
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   WxServer=wx:new(),

@@ -53,6 +53,7 @@ init([]) ->
  % ets:insert(cars,{yarin,0,{290,400},0,east,red}),
   %spawn(alerts,switch_area,[yarin]),
   %traffic_light:start(0,{1137,100},t1),
+  %cars:start(shahar,645,417,north,22),
   %traffic_light:start({0,1137,100,red},t1),
   %traffic_light:start({1,1055,100,green},t2),
 
@@ -73,7 +74,10 @@ handle_call(firstcar, _From, State) ->
   {reply,CarTosend, State};
 
 handle_call({nextcar,Car}, _From, State) ->
-  CarTosend=ets:lookup(cars,ets:next(cars,Car)),
+  Bool=ets:member(cars,Car),
+  if
+    Bool=:=true->CarTosend=ets:lookup(cars,ets:next(cars,Car));
+    true->CarTosend=[] end,
   {reply,CarTosend, State}.
 %% @private
 
@@ -86,7 +90,7 @@ handle_call({nextcar,Car}, _From, State) ->
 
 handle_cast({start_car,Name,X,Y,Dir,Road}, State) ->
   %io:format("car started:~p,~p,~p,~p",[Name,X,Y,Dir]),
-  io:format("starting car"),
+  %io:format("starting car"),
   cars:start(Name,X,Y,Dir,Road),
   {noreply, State};
 handle_cast({start_traffic_light,Road,X,Y,Color,Name}, State) ->
