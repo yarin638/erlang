@@ -86,6 +86,7 @@ handle_call({nextcar,Car}, _From, State) ->
 
 handle_cast({start_car,Name,X,Y,Dir,Road}, State) ->
   %io:format("car started:~p,~p,~p,~p",[Name,X,Y,Dir]),
+  io:format("starting car"),
   cars:start(Name,X,Y,Dir,Road),
   {noreply, State};
 handle_cast({start_traffic_light,Road,X,Y,Color,Name}, State) ->

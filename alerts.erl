@@ -12,7 +12,7 @@
 -define(Y_center,410).
 
 %% API
--export([out_of_map/1,tl_alert/2,car_alert/2,junc_alert/2,clear_path/2,switch_area/1]).
+-export([out_of_map/1,tl_alert/2,car_alert/2,junc_alert/2,clear_path/2,switch_area/4]).
 
 out_of_map(Car)-> %check if Car is out of map.
   [_CarNumber1,_Road1,{X1,Y1},_Speed,_Dir1,_Color]=ets:lookup(cars,Car),
@@ -250,52 +250,62 @@ tl_alert(Car,Junction)->
   end.
 
 
-switch_area(Car)->
+switch_area(Car,SensorPid,SensorPid2,SensorPid3)->
   [{_CarNumber,_Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Car),
   case Dir of
     south->
       if
-        Cx<?X_center , Cy<?Y_center , (?Y_center-Cy)<5->
+        Cx<?X_center , Cy<?Y_center , (?Y_center-Cy)<2->
+          link(SensorPid),link(SensorPid2),link(SensorPid3),
           cars:switch_area(Car,server2),
           timer:sleep(1000);
-        Cx>?X_center ,Cy<?Y_center,(?Y_center-Cy)<5->
+        Cx>?X_center ,Cy<?Y_center,(?Y_center-Cy)<2->
+          link(SensorPid),link(SensorPid2),link(SensorPid3),
           cars:switch_area(Car,server3),
           timer:sleep(300);
         true->
-          switch_area(Car)
+          switch_area(Car,SensorPid,SensorPid2,SensorPid3)
       end;
     north->
       if
-        Cx<?X_center , Cy>?Y_center,(Cy-?Y_center)<5->
+        Cx<?X_center , Cy>?Y_center,(Cy-?Y_center)<2->
+          link(SensorPid),link(SensorPid2),link(SensorPid3),
           cars:switch_area(Car,server1),
           timer:sleep(1000);
-        Cx>?X_center,Cy>?Y_center , (Cy-?Y_center)<5->
+        Cx>?X_center,Cy>?Y_center , (Cy-?Y_center)<2->
+          io:format("move to 4"),
+          link(SensorPid),link(SensorPid2),link(SensorPid3),
+          io:format("linked"),
           cars:switch_area(Car,server4),
           timer:sleep(300);
         true->
-          switch_area(Car)
+          switch_area(Car,SensorPid,SensorPid2,SensorPid3)
       end;
     east->
       if
-        Cx<?X_center,Cy>?Y_center,(?X_center-Cx)<5->
+        Cx<?X_center,Cy>?Y_center,(?X_center-Cx)<2->
+          link(SensorPid),link(SensorPid2),link(SensorPid3),
           cars:switch_area(Car,server3),
           timer:sleep(1000);
-        Cx<?X_center , Cy<?Y_center,(?X_center-Cx)<5 ->
+        Cx<?X_center , Cy<?Y_center,(?X_center-Cx)<2 ->
+          link(SensorPid),link(SensorPid2),link(SensorPid3),
           cars:switch_area(Car,server4),
           timer:sleep(300);
         true->
-          switch_area(Car)
+          switch_area(Car,SensorPid,SensorPid2,SensorPid3)
       end;
     west->
       if
-        Cx>?X_center,Cy>?Y_center,(Cx-?X_center)<5->
+        Cx>?X_center,Cy>?Y_center,(Cx-?X_center)<2->
+          link(SensorPid),link(SensorPid2),link(SensorPid3),
           cars:switch_area(Car,server2),
           timer:sleep(1000);
-        Cx>?X_center,Cy<?Y_center,(Cx-?X_center)<5->
+        Cx>?X_center,Cy<?Y_center,(Cx-?X_center)<2->
+          link(SensorPid),link(SensorPid2),link(SensorPid3),
           cars:switch_area(Car,server1),
           timer:sleep(300);
         true->
-          switch_area(Car)
+          switch_area(Car,SensorPid,SensorPid2,SensorPid3)
       end
   end.
 
