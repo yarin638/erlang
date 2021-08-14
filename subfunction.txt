@@ -1,0 +1,16 @@
+{ok, Number} = io:read("Enter number of cars(between 5 and 15):"),
+  Data=[{c1,175,10,south,2,?Server1},{c2,550,95,east,6,?Server4},{c3,0,520,east,11,?Server2},{c4,480,95,east,6,?Server4},{c5,450,220,west,33,?Server4},{c6,570,634,east,18,?Server3},
+  {c7,300,95,east,4,?Server1},{c8,200,345,east,10,?Server1},{c8,320,520,east,14,?Server3},{c9,405,430,south,15,?Server3},{c10,175,250,south,3,?Server1},{c11,645,850,north,22,?Server4}],
+
+
+after all
+create_cars(Data,Number), 
+
+create_cars([],0)->
+  none;
+create_cars(Data,0)->
+  none;
+create_cars(Data,Number)->
+  {Car,X,Y,Dir,Road}=hd(Data),
+  cars:start(Car,X,Y,Dir,Road),
+  create_cars(tl(Data),Number-1).
