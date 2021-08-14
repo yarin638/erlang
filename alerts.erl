@@ -80,14 +80,14 @@ junc_alert(Car,Junction)->
   end.
   
 clear_path(Car,Close_Car)->
-  [{_CarNumber1,_Road1,{Cx1,Cy1},_Speed,Dir1,_Color}]=ets:lookup(cars,Car), %Car details
+  [{_CarNumber1,Road1,{Cx1,Cy1},_Speed,Dir1,_Color}]=ets:lookup(cars,Car), %Car details
   Bool=ets:member(cars,Close_Car),
   if Bool==true->
-       [{_CarNumber2,_Road2,{Cx2,Cy2},_Speed,_Dir2,_Color}]=ets:lookup(cars,Close_Car),
+       [{_CarNumber2,Road2,{Cx2,Cy2},_Speed,_Dir2,_Color}]=ets:lookup(cars,Close_Car),
   case Dir1 of
     south->
       if
-        (Cy2-Cy1>70) and (Cy2-Cy1>0) ->
+        (Cy2-Cy1>70) or (Road1=/=Road2) ->
           cars:clear_path(Car);
         true->
           timer:sleep(50),
@@ -95,7 +95,7 @@ clear_path(Car,Close_Car)->
       end;
     north->
       if
-        (Cy1-Cy2>70) and (Cy1-Cy2>0) ->
+        (Cy1-Cy2>70) and (Road1=/=Road2) ->
           cars:clear_path(Car);
         true->
           timer:sleep(50),
@@ -103,7 +103,7 @@ clear_path(Car,Close_Car)->
       end;
     west->
       if
-        (Cx1-Cx2>70 )and( Cx1-Cx2>0) ->
+        (Cx1-Cx2>70 )and (Road1=/=Road2) ->
           cars:clear_path(Car);
           true->
             timer:sleep(50),
@@ -111,7 +111,7 @@ clear_path(Car,Close_Car)->
           end;
     east->
       if
-        (Cx2-Cx1>70) and (Cx1-Cx2>0 )->
+        (Cx2-Cx1>70) and (Road1=/=Road2)->
           cars:clear_path(Car);
         true->
           timer:sleep(50),

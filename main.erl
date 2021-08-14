@@ -77,23 +77,27 @@ init([])->
   gen_server:cast({server,?Server3},{start_junc,{405,800},[17],[19,20],[west,south]}),
   gen_server:cast({server,?Server4},{start_junc,{645,220},[34],[33,7],[west,north]}),
   gen_server:cast({server,?Server4},{start_junc,{395,220},[33],[35,5],[south,north]}),
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+   {ok, Number} = io:read("Enter number of cars(between 5 and 11):"),
+   List=[{c1,175,10,south,2,?Server1},{c2,550,95,east,6,?Server4},{c3,0,520,east,11,?Server2},{c4,480,95,east,6,?Server4}, {c5,450,220,west,33,?Server4},{c6,570,634,east,18,?Server3},
+ {c8,200,345,east,10,?Server1},{c8,320,520,east,14,?Server3},{c9,405,430,south,15,?Server3},{c10,175,250,south,3,?Server1},{c11,645,850,north,22,?Server4}],
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  create_cars(List,Number), 
   %%%%start cars%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  gen_server:cast({server,?Server1},{start_car,yarin,175,10,south,2}),
-  gen_server:cast({server,?Server4},{start_car,lotke,550,95,east,6}),
-  gen_server:cast({server,?Server2},{start_car,elioz,0,520,east,11}),
-  gen_server:cast({server,?Server4},{start_car,eliav,480,95,east,6}),
+  %gen_server:cast({server,?Server1},{start_car,yarin,175,10,south,2}),
+  %gen_server:cast({server,?Server4},{start_car,lotke,550,95,east,6}),
+  %gen_server:cast({server,?Server2},{start_car,elioz,0,520,east,11}),
+  %gen_server:cast({server,?Server4},{start_car,eliav,480,95,east,6}),
  
- gen_server:cast({server,?Server4},{start_car,yanir,450,220,west,33}),
-  gen_server:cast({server,?Server3},{start_car,meitar,570,635,east,18}),
-  gen_server:cast({server,?Server1},{start_car,tal,300,95,east,4}),
-  gen_server:cast({server,?Server1},{start_car,daniela,200,345,east,10}),
-  gen_server:cast({server,?Server3},{start_car,naema,320,520,east,14}),
-   gen_server:cast({server,?Server3},{start_car,raviv,405,430,south,15}),
-   gen_server:cast({server,?Server1},{start_car,hadar,175,250,south,3}),
-  %en_server:cast({server,?Server4},{start_car,shahar,645,850,north,130}),
-  gen_server:cast({server,?Server3},{start_car,shaar,645,900,north,22}),
+ %gen_server:cast({server,?Server4},{start_car,yanir,450,220,west,33}),
+  %gen_server:cast({server,?Server3},{start_car,meitar,570,635,east,18}),
+  %gen_server:cast({server,?Server1},{start_car,tal,300,95,east,4}),
+  %gen_server:cast({server,?Server1},{start_car,daniela,200,345,east,10}),
+  %gen_server:cast({server,?Server3},{start_car,naema,320,520,east,14}),
+   %gen_server:cast({server,?Server3},{start_car,raviv,405,430,south,15}),
+   %gen_server:cast({server,?Server1},{start_car,hadar,175,250,south,3}),
+  %gen_server:cast({server,?Server4},{start_car,shahar,645,850,north,130}),
+  %gen_server:cast({server,?Server3},{start_car,shaar,645,900,north,22}),
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   WxServer=wx:new(),
@@ -227,3 +231,14 @@ check_PC(PC_to_check,PC1,PC2,PC3,PC4) ->
   end.
 
 moveEtsCars(PcToMove)->ik.
+
+
+ %gen_server:cast({server,?Server3},{start_car,shaar,645,900,north,22}),
+create_cars([],0)->
+  none;
+create_cars(_Data,0)->
+  none;
+create_cars(Data,Number)->
+  {Car,X,Y,Dir,Road,Server}=hd(Data),
+  gen_server:cast({server,Server},{start_car,Car,X,Y,Dir,Road}),
+  create_cars(tl(Data),Number-1).
