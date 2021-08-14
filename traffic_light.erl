@@ -12,7 +12,7 @@
 
 -export([start/2,push/1,timeout/0,stop/0]).
 -export([terminate/3,code_change/4,init/1,callback_mode/0]).
--export([green/3,red/3,yellow/3]).
+-export([green/3,red/3,yellowFormRed/3,yellowFormGreen/3]).
 
 name() -> pushbutton_statem. % The registered server name
 
@@ -37,7 +37,7 @@ init([{R,X,Y,Color}]) ->
   %% Set the initial state + data.  Data is used only as a counter.
   State = Color, Data = 0,
   ets:insert(traffic_light,{R,{X,Y},self()}),
-  {ok,State,Data,5000}.
+  {ok,State,Data,3000}.
 callback_mode() -> state_functions.
 
 %%% state callback(s)
@@ -48,38 +48,51 @@ callback_mode() -> state_functions.
  % io:format("yellow~n"),
   %{next_state,yellow,Data+1,[{state_timeout,3000,lock}]};
 
-red(timeout, 5000,  Data) ->
+red(timeout, 3000,  Data) ->
  %io:format("yellow~n"),
-  {next_state, yellow, Data, [{timeout,5000,lock}]};
+  {next_state, yellowFormRed, Data, [{timeout,3000,lock}]};
 
 red(timeout, lock,  Data) ->
   %io:format("yellow~n"),
-  {next_state, yellow, Data,[{timeout,5000,lock}]};
+  {next_state, yellowFormRed, Data,[{timeout,3000,lock}]};
 
 
 red(EventType, EventContent, Data) ->
   handle_event(EventType, EventContent, Data).
 
 
-yellow(timeout, 5000,  Data) ->
+yellowFormRed(timeout, 3000,  Data) ->
   %% Go to 'on', increment count and reply
   %% that the resulting status is 'on'
-  {next_state,green,Data+1,[{timeout,5000,lock}]};
+  {next_state,green,Data+1,[{timeout,3000,lock}]};
 
-yellow(timeout, lock,  Data) ->
+yellowFormRed(timeout, lock,  Data) ->
   %io:format("green~n"),
-  {next_state, green, Data,[{timeout,5000,lock}]};
+  {next_state, green, Data,[{timeout,3000,lock}]};
 
-yellow(EventType, EventContent, Data) ->
+yellowFormRed(EventType, EventContent, Data) ->
   handle_event(EventType, EventContent, Data).
 
-green(timeout, 5000,  Data) ->
+
+yellowFormGreen(timeout, 3000,  Data) ->
+  %% Go to 'on', increment count and reply
+  %% that the resulting status is 'on'
+  {next_state,red,Data+1,[{timeout,3000,lock}]};
+
+yellowFormGreen(timeout, lock,  Data) ->
+  %io:format("red~n"),
+  {next_state, red, Data,[{timeout,3000,lock}]};
+
+yellowFormGreen(EventType, EventContent, Data) ->
+  handle_event(EventType, EventContent, Data).
+
+green(timeout, 3000,  Data) ->
   %% Go to 'off' and reply that the resulting status is 'off'
-  {next_state,red,Data,[{timeout,5000,lock}]};
+  {next_state,yellowFormGreen,Data,[{timeout,3000,lock}]};
 
 green(timeout, lock,  Data) ->
-  %io:format("red~n"),
-  {next_state, red, Data,[{timeout,5000,lock}]};
+  %io:format("yekkow~n"),
+  {next_state, yellowFormGreen, Data,[{timeout,3000,lock}]};
 
 green(EventType, EventContent, Data) ->
   handle_event(EventType, EventContent, Data).

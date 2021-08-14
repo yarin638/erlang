@@ -9,7 +9,7 @@
 -module('alerts').
 -author("eliav").
 -define(X_center,300).
--define(Y_center,410).
+-define(Y_center,390).
 
 %% API
 -export([out_of_map/1,tl_alert/2,car_alert/2,junc_alert/2,clear_path/2,switch_area/4]).
@@ -125,69 +125,52 @@ car_alert(Car,'$end_of_table')->
   car_alert(Car,ets:first(cars));
 
 car_alert(Car,P_car)->
-  Bool10=ets:member(cars,Car),
-  case Bool10 of
-    false->car_alert(Car,P_car);
-    true->
-      %io:format("~p",[ets:lookup(cars,Car)]),
   [{CarNumber1,Road1,{Cx1,Cy1},_Speed1,_Dir1,_Color1}]=ets:lookup(cars,Car), %get car details
-  Alive=ets:lookup(cars,P_car),
+  Alive=ets:member(cars,P_car),
   if
-    Alive=:=[]->
-     [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,ets:first(cars));
-    true-> [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=Alive
+    Alive=:=true->
+      [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,P_car);
+    true->
+      [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,ets:first(cars))
   end,
-  case (Road1=:=Road2) and(CarNumber1=/=CarNumber2) of
+  case (Road1==Road2) and(CarNumber1=/=CarNumber2) of
     true->
       case _Dir1 of
         south->
           if
             (Cy2-Cy1<50) and (Cy2-Cy1>0 )->
               cars:car_alert(Car,P_car),
-              timer:sleep(1000),
               car_alert(Car,ets:first(cars));
             true->
-              if Alive=:=true->car_alert(Car,ets:next(cars,P_car));
-              true->car_alert(Car,ets:first(cars)) end
+              car_alert(Car,ets:next(cars,P_car))
           end;
         north->
           if
             (Cy1-Cy2<50 )and( Cy1-Cy2>0 )->
               cars:car_alert(Car,P_car),
-              timer:sleep(1000),
               car_alert(Car,ets:first(cars));
             true->
-          %  io:format("~p",[P_car]),
-              if Alive=:=true->car_alert(Car,ets:next(cars,P_car));
-                true->car_alert(Car,ets:first(cars)) end
+              car_alert(Car,ets:next(cars,P_car))
           end;
         west->
           if
             (Cx1-Cx2<50) and (Cx1-Cx2>0) ->
               cars:car_alert(Car,P_car),
-              timer:sleep(1000),
               car_alert(Car,ets:first(cars));
             true->
-              if Alive=:=true->car_alert(Car,ets:next(cars,P_car));
-                true->car_alert(Car,ets:first(cars)) end
+              car_alert(Car,ets:next(cars,P_car))
           end;
         east->
           if
             (Cx1-Cx2<50) and( Cx1-Cx2>0 )->
               cars:car_alert(Car,P_car),
-              timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->
-              if Alive=:=true->car_alert(Car,ets:next(cars,P_car));
-                true->car_alert(Car,ets:first(cars)) end
+              car_alert(Car,ets:next(cars,P_car))
           end
       end;
     false->
-      Bool3=ets:lookup(cars,P_car),
-      if
-        Bool3=:=[]->car_alert(Car,ets:first(cars));
-        true->car_alert(Car,ets:next(cars,P_car)) end
-  end
+      car_alert(Car,ets:next(cars,P_car))
   end.
 
 

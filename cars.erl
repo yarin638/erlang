@@ -85,7 +85,9 @@ tl_alert(Car,green)->
   traffic_light_green(Car);
 tl_alert(Car,red)->
   traffic_light_red(Car);
-tl_alert(Car,yellow)->
+tl_alert(Car,yellowFormRed)->
+  traffic_light_orange(Car);
+tl_alert(Car,yellowFormGreen)->
   traffic_light_orange(Car).
 
 junc_alert(Car,west,NewRoad)-> ets:update_element(cars,Car,[{2,NewRoad},{5,west}]),turn_west(Car);
@@ -130,42 +132,50 @@ stop(Car) ->
 
 stright(cast, move_car1, Data) ->
   {_,_,_,Cname}=Data,
-  timer:sleep(100),
   [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Cname),
-  gen_server:cast({server,?Server1},{start_car,CarNumber1,Cx-6,Cy-6,Dir,Road}),
-  ets:update_element(cars,Cname,[{3,{100000,10000}},{5,south}]),
+  case Dir of
+    west->gen_server:cast({server,?Server1},{start_car,CarNumber1,Cx-3,Cy,Dir,Road});
+    north->gen_server:cast({server,?Server1},{start_car,CarNumber1,Cx,Cy-3,Dir,Road})
+  end,
+  ets:update_element(cars,Cname,[{2,400},{3,{100000,10000}},{5,south}]),
   %exit(get(sens1),kill), exit(get(sens2),kill), exit(get(sens3),kill), exit(get(sens4),kill),
     %ets:delete(cars,Cname),
    {next_state,stooping,Data};
 
 stright(cast, move_car2, Data) ->
   {_,_,_,Cname}=Data,
-  timer:sleep(100),
   [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Cname),
-  gen_server:cast({server,?Server2},{start_car,CarNumber1,Cx-6,Cy+6,Dir,Road}),
-  ets:update_element(cars,Cname,[{3,{100000,10000}},{5,south}]),
+  case Dir of
+    west->gen_server:cast({server,?Server2},{start_car,CarNumber1,Cx-3,Cy,Dir,Road});
+    south->gen_server:cast({server,?Server2},{start_car,CarNumber1,Cx,Cy+3,Dir,Road})
+  end,
+  ets:update_element(cars,Cname,[{2,400},{3,{100000,10000}},{5,south}]),
     %exit(get(sens1),kill), exit(get(sens2),kill), exit(get(sens3),kill), exit(get(sens4),kill),
     %ets:delete(cars,Cname),
     {next_state,stooping,Data};
 
 stright(cast, move_car3, Data) ->
   {_,_,_,Cname}=Data,
-  timer:sleep(100),
   [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Cname),
-  gen_server:cast({server,?Server3},{start_car,CarNumber1,Cx+6,Cy+6,Dir,Road}),
-  ets:update_element(cars,Cname,[{3,{100000,10000}},{5,south}]),
+  case Dir of
+    east->gen_server:cast({server,?Server3},{start_car,CarNumber1,Cx+3,Cy,Dir,Road});
+    south->gen_server:cast({server,?Server3},{start_car,CarNumber1,Cx,Cy+3,Dir,Road})
+  end,
+  ets:update_element(cars,Cname,[{2,400},{3,{100000,10000}},{5,south}]),
    % exit(get(sens1),kill), exit(get(sens2),kill), exit(get(sens3),kill), exit(get(sens4),kill),
     %ets:delete(cars,Cname),
   {next_state,stooping,Data} ;
 
 stright(cast, move_car4, Data) ->
   {_,_,_,Cname}=Data,
-  timer:sleep(100),
   %io:format("in statem"),
   [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Cname),
+  case Dir of
+    east->gen_server:cast({server,?Server4},{start_car,CarNumber1,Cx+3,Cy,Dir,Road});
+    north->gen_server:cast({server,?Server4},{start_car,CarNumber1,Cx,Cy-3,Dir,Road})
+  end,
   %io:format("after lookup"),
-  gen_server:cast({server,?Server4},{start_car,CarNumber1,Cx+6,Cy-6,Dir,Road}),
-  ets:update_element(cars,Cname,[{3,{100000,10000}},{5,south}]),
+  ets:update_element(cars,Cname,[{2,400},{3,{100000,10000}},{5,south}]),
   %exit(get(sens1),kill), exit(get(sens2),kill), exit(get(sens3),kill), exit(get(sens4),kill),
   %ets:delete(cars,Cname),
   {next_state,stooping,Data} ;
