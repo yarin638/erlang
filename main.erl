@@ -225,4 +225,4 @@ check_PC(PC_to_check,PC1,PC2,PC3,PC4) ->
         end
   end.
 
-moveEtsCars(PcToMove)->
+moveEtsCars(PcToMove)->ik.
