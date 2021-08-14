@@ -17,7 +17,7 @@
 %-define(Server3, 'eliav4670@yarinabutbul-VirtualBox').
 %-define(Server4, 'eliav4670@yarinabutbul-VirtualBox').
 
--export([start/0,init/1,handle_event/2,handle_info/2,handle_sync_event/3]).
+-export([start/0,init/1,handle_event/2,handle_info/2,handle_sync_event/3,moveEtsCars/1]).
 -define(Mx,781).
 -define(My,1024).
 -define(Timer,67).
@@ -28,6 +28,9 @@ start() ->
   wx_object:start({local,?SERVER},?MODULE,[],[]).
 
 init([])->
+  %ets:new(cars,[set,public,named_table]),
+  %ets:new(junction,[set,public,named_table]),ets:new(traffic_light,[set,public,named_table]),
+  %ets:insert(traffic_light,{R,{X,Y},self()}),
   net_kernel:connect_node(?Server1),
   net_kernel:connect_node(?Server2),
   net_kernel:connect_node(?Server3),
@@ -78,16 +81,16 @@ init([])->
 
   %%%%start cars%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   gen_server:cast({server,?Server1},{start_car,yarin,175,10,south,2}),
-  gen_server:cast({server,?Server4},{start_car,lotke,550,95,east,6}),
-  gen_server:cast({server,?Server2},{start_car,elioz,0,520,east,11}),
-  gen_server:cast({server,?Server4},{start_car,eliav,480,95,east,6}),
-  gen_server:cast({server,?Server4},{start_car,yanir,450,220,west,33}),
- % gen_server:cast({server,?Server3},{start_car,meitar,570,635,east,18}),
-  %gen_server:cast({server,?Server1},{start_car,tal,300,95,east,4}),
-  %gen_server:cast({server,?Server1},{start_car,daniela,200,345,east,10}),
-  %gen_server:cast({server,?Server3},{start_car,naema,320,520,east,14}),
- % gen_server:cast({server,?Server3},{start_car,raviv,405,430,south,15}),
-%  gen_server:cast({server,?Server1},{start_car,hadar,175,250,south,3}),
+  %gen_server:cast({server,?Server4},{start_car,lotke,550,95,east,6}),
+  %gen_server:cast({server,?Server2},{start_car,elioz,0,520,east,11}),
+  %gen_server:cast({server,?Server4},{start_car,eliav,480,95,east,6}),
+  %gen_server:cast({server,?Server4},{start_car,yanir,450,220,west,33}),
+  gen_server:cast({server,?Server3},{start_car,meitar,570,635,east,18}),
+  gen_server:cast({server,?Server1},{start_car,tal,300,95,east,4}),
+  gen_server:cast({server,?Server1},{start_car,daniela,200,345,east,10}),
+  gen_server:cast({server,?Server3},{start_car,naema,320,520,east,14}),
+   gen_server:cast({server,?Server3},{start_car,raviv,405,430,south,15}),
+   gen_server:cast({server,?Server1},{start_car,hadar,175,250,south,3}),
   %en_server:cast({server,?Server4},{start_car,shahar,645,850,north,130}),
   gen_server:cast({server,?Server4},{start_car,shaar,645,900,north,22}),
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -208,3 +211,18 @@ createMap()->
   BBlueCarS=wxBitmap:new(BlueCarS),
   wxImage:destroy(BlueCar),
   {BMap,BRedCarW,BRedCarN,BRedCarE,BRedCarS,BBlueCarW,BBlueCarN,BBlueCarE,BBlueCarS}.
+
+
+check_PC(PC_to_check,PC1,PC2,PC3,PC4) ->
+  Res = net_adm:ping(PC_to_check), % check if the PC the car is on is alive
+  case Res of
+    pong -> ok;
+    pang-> case PC_to_check of % if the PC is not alive, check the backup PC
+             ?Server1-> moveEtsCars(?Server2);
+             ?Server2-> moveEtsCars(?Server3);
+             ?Server3 -> moveEtsCars(?Server4);
+             ?Server4 ->moveEtsCars(?Server1)
+        end
+  end.
+
+moveEtsCars(PcToMove)->

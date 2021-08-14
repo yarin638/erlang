@@ -133,8 +133,9 @@ stright(cast, move_car1, Data) ->
   timer:sleep(100),
   [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Cname),
   gen_server:cast({server,?Server1},{start_car,CarNumber1,Cx-6,Cy-6,Dir,Road}),
+  ets:update_element(cars,Cname,[{3,{100000,10000}},{5,south}]),
   %exit(get(sens1),kill), exit(get(sens2),kill), exit(get(sens3),kill), exit(get(sens4),kill),
-    ets:delete(cars,Cname),
+    %ets:delete(cars,Cname),
    {next_state,stooping,Data};
 
 stright(cast, move_car2, Data) ->
@@ -142,8 +143,9 @@ stright(cast, move_car2, Data) ->
   timer:sleep(100),
   [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Cname),
   gen_server:cast({server,?Server2},{start_car,CarNumber1,Cx-6,Cy+6,Dir,Road}),
+  ets:update_element(cars,Cname,[{3,{100000,10000}},{5,south}]),
     %exit(get(sens1),kill), exit(get(sens2),kill), exit(get(sens3),kill), exit(get(sens4),kill),
-    ets:delete(cars,Cname),
+    %ets:delete(cars,Cname),
     {next_state,stooping,Data};
 
 stright(cast, move_car3, Data) ->
@@ -151,8 +153,9 @@ stright(cast, move_car3, Data) ->
   timer:sleep(100),
   [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Cname),
   gen_server:cast({server,?Server3},{start_car,CarNumber1,Cx+6,Cy+6,Dir,Road}),
+  ets:update_element(cars,Cname,[{3,{100000,10000}},{5,south}]),
    % exit(get(sens1),kill), exit(get(sens2),kill), exit(get(sens3),kill), exit(get(sens4),kill),
-    ets:delete(cars,Cname),
+    %ets:delete(cars,Cname),
   {next_state,stooping,Data} ;
 
 stright(cast, move_car4, Data) ->
@@ -162,8 +165,9 @@ stright(cast, move_car4, Data) ->
   [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Cname),
   %io:format("after lookup"),
   gen_server:cast({server,?Server4},{start_car,CarNumber1,Cx+6,Cy-6,Dir,Road}),
+  ets:update_element(cars,Cname,[{3,{100000,10000}},{5,south}]),
   %exit(get(sens1),kill), exit(get(sens2),kill), exit(get(sens3),kill), exit(get(sens4),kill),
-  ets:delete(cars,Cname),
+  %ets:delete(cars,Cname),
   {next_state,stooping,Data} ;
 
 
