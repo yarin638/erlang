@@ -8,7 +8,7 @@
 %%%-------------------------------------------------------------------
 -module('alerts').
 -author("eliav").
--define(X_center,300).
+-define(X_center,270).
 -define(Y_center,390).
 
 %% API
@@ -103,7 +103,7 @@ clear_path(Car,Close_Car)->
       end;
     west->
       if
-        (Cx1-Cx2<70 )and( Cx1-Cx2>0) ->
+        (Cx1-Cx2>70 )and( Cx1-Cx2>0) ->
           cars:clear_path(Car);
           true->
             timer:sleep(50),
@@ -111,7 +111,7 @@ clear_path(Car,Close_Car)->
           end;
     east->
       if
-        (Cx1-Cx2<70) and (Cx1-Cx2>0 )->
+        (Cx2-Cx1>70) and (Cx1-Cx2>0 )->
           cars:clear_path(Car);
         true->
           timer:sleep(50),
@@ -140,6 +140,7 @@ car_alert(Car,P_car)->
           if
             (Cy2-Cy1<50) and (Cy2-Cy1>0 )->
               cars:car_alert(Car,P_car),
+	      timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->
               car_alert(Car,ets:next(cars,P_car))
@@ -148,6 +149,7 @@ car_alert(Car,P_car)->
           if
             (Cy1-Cy2<50 )and( Cy1-Cy2>0 )->
               cars:car_alert(Car,P_car),
+	      timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->
               car_alert(Car,ets:next(cars,P_car))
@@ -156,14 +158,16 @@ car_alert(Car,P_car)->
           if
             (Cx1-Cx2<50) and (Cx1-Cx2>0) ->
               cars:car_alert(Car,P_car),
+	      timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->
               car_alert(Car,ets:next(cars,P_car))
           end;
         east->
           if
-            (Cx1-Cx2<50) and( Cx1-Cx2>0 )->
+            (Cx2-Cx1<50) and( Cx2-Cx1>0 )->
               cars:car_alert(Car,P_car),
+              timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->
               car_alert(Car,ets:next(cars,P_car))

@@ -46,8 +46,8 @@ init([])->
   gen_server:cast({server,?Server4},{start_traffic_light,5,395,160,green,t4}),
   gen_server:cast({server,?Server4},{start_traffic_light,6,590,95,green,t5}),
   gen_server:cast({server,?Server4},{start_traffic_light,7,645,150,red,t6}),
-  gen_server:cast({server,?Server4},{start_traffic_light,10,340,345,red,t18}),
-  gen_server:cast({server,?Server4},{start_traffic_light,35,395,290,green,t19}),
+  gen_server:cast({server,?Server4},{start_traffic_light,10,360,345,red,t18}),
+  gen_server:cast({server,?Server4},{start_traffic_light,35,395,310,green,t19}),
   gen_server:cast({server,?Server2},{start_traffic_light,13,120,520,red,t7}),
   gen_server:cast({server,?Server2},{start_traffic_light,9,175,465,green,t8}),
   gen_server:cast({server,?Server3},{start_traffic_light,14,350,520,red,t10}),
@@ -81,12 +81,13 @@ init([])->
 
   %%%%start cars%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   gen_server:cast({server,?Server1},{start_car,yarin,175,10,south,2}),
- % gen_server:cast({server,?Server4},{start_car,lotke,550,95,east,6}),
+  gen_server:cast({server,?Server4},{start_car,lotke,550,95,east,6}),
   gen_server:cast({server,?Server2},{start_car,elioz,0,520,east,11}),
-  %gen_server:cast({server,?Server4},{start_car,eliav,480,95,east,6}),
-  gen_server:cast({server,?Server4},{start_car,yanir,450,220,west,33}),
+  gen_server:cast({server,?Server4},{start_car,eliav,480,95,east,6}),
+ 
+ gen_server:cast({server,?Server4},{start_car,yanir,450,220,west,33}),
   gen_server:cast({server,?Server3},{start_car,meitar,570,635,east,18}),
- % gen_server:cast({server,?Server1},{start_car,tal,300,95,east,4}),
+  gen_server:cast({server,?Server1},{start_car,tal,300,95,east,4}),
   gen_server:cast({server,?Server1},{start_car,daniela,200,345,east,10}),
   gen_server:cast({server,?Server3},{start_car,naema,320,520,east,14}),
    gen_server:cast({server,?Server3},{start_car,raviv,405,430,south,15}),
