@@ -15,7 +15,7 @@
 -export([start_link/0]).
 
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,makeAnAtom/2,
   code_change/3]).
 
 -define(SERVER, ?MODULE).
@@ -53,8 +53,10 @@ init([]) ->
  % ets:insert(cars,{yarin,0,{290,400},0,east,red}),
   %spawn(alerts,switch_area,[yarin]),
   %traffic_light:start(0,{1137,100},t1),
-  %cars:start(shahar,645,417,north,22),
-  %traffic_light:start({0,1137,100,red},t1),
+  cars:start(shahar,645,100,north,22),
+  cars:start(yarin,645,70,north,22),
+  cars:start(shahar,800,100,north,22),
+  traffic_light:start({22,645,65,red},t1),
   %traffic_light:start({1,1055,100,green},t2),
 
   {ok, #server_state{}}.
@@ -91,7 +93,8 @@ handle_call({nextcar,Car}, _From, State) ->
 handle_cast({start_car,Name,X,Y,Dir,Road}, State) ->
   %io:format("car started:~p,~p,~p,~p",[Name,X,Y,Dir]),
   %io:format("starting car"),
-  cars:start(Name,X,Y,Dir,Road),
+  Newname=makeAnAtom(X,Name),
+  cars:start(Newname,X,Y,Dir,Road),
   {noreply, State};
 handle_cast({start_traffic_light,Road,X,Y,Color,Name}, State) ->
   traffic_light:start({Road,X,Y,Color},Name),
@@ -131,3 +134,4 @@ code_change(_OldVsn, State = #server_state{}, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+makeAnAtom(X,Name)->list_to_atom(string:join([atom_to_list(Name),integer_to_list(X)],"")).
