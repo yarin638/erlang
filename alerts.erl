@@ -26,7 +26,6 @@ out_of_map(Car)-> %check if Car is out of map.
 junc_alert(Car,'$end_of_table')-> %check if car is close to junction
   junc_alert(Car,ets:first(junction));
 junc_alert(Car,Junction)->
-  Bool2=ets:member(cars,Car),
   case ets:member(cars,Car) of false-> ok;
     true->
   [{_CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Car), %car details
@@ -79,7 +78,7 @@ junc_alert(Car,Junction)->
   end
   end.
   
-clear_path(Car,Close_Car)->
+clear_path(Car,Close_Car)-> %check if the car that was before our car is far enoughe
   [{_CarNumber1,Road1,{Cx1,Cy1},_Speed,Dir1,_Color}]=ets:lookup(cars,Car), %Car details
   Bool=ets:member(cars,Close_Car),
   if Bool==true->
@@ -121,6 +120,7 @@ clear_path(Car,Close_Car)->
   true->cars:clear_path(Car)
   end.
 
+%check if there is a car that we get too close to
 car_alert(Car,'$end_of_table')->
   car_alert(Car,ets:first(cars));
 
@@ -129,13 +129,13 @@ car_alert(Car,P_car)->
   Alive=ets:member(cars,P_car),
   if
     Alive=:=true->
-      [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,P_car);
+      [{CarNumber2,Road2,{Cx2,Cy2},_Speed2,Dir2,_Color2}]=ets:lookup(cars,P_car);
     true->
-      [{CarNumber2,Road2,{Cx2,Cy2},Speed2,Dir2,_Color2}]=ets:lookup(cars,ets:first(cars))
+      [{CarNumber2,Road2,{Cx2,Cy2},_Speed2,Dir2,_Color2}]=ets:lookup(cars,ets:first(cars))
   end,
   case (Road1==Road2) and(CarNumber1=/=CarNumber2) of
     true->
-      case _Dir1 of
+      case Dir2 of
         south->
           if
             (Cy2-Cy1<50) and (Cy2-Cy1>0 )->

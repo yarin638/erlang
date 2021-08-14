@@ -78,24 +78,24 @@ init([])->
   gen_server:cast({server,?Server4},{start_junc,{645,220},[34],[33,7],[west,north]}),
   gen_server:cast({server,?Server4},{start_junc,{395,220},[33],[35,5],[south,north]}),
 
-   {ok, Number} = io:read("Enter number of cars(between 5 and 11):"),
-   List=[{c1,175,10,south,2,?Server1},{c2,550,95,east,6,?Server4},{c3,0,520,east,11,?Server2},{c4,480,95,east,6,?Server4}, {c5,450,220,west,33,?Server4},{c6,570,634,east,18,?Server3},
- {c8,200,345,east,10,?Server1},{c8,320,520,east,14,?Server3},{c9,405,430,south,15,?Server3},{c10,175,250,south,3,?Server1},{c11,645,850,north,22,?Server4}],
+  % {ok, Number} = io:read("Enter number of cars(between 5 and 11):"),
+  % List=[{c1,175,10,south,2,?Server1},{c2,550,95,east,6,?Server4},{c3,0,520,east,11,?Server2},{c4,480,95,east,6,?Server4}, {c5,450,220,west,33,?Server4},{c6,570,634,east,18,?Server3},
+ %{c8,200,345,east,10,?Server1},{c8,320,520,east,14,?Server3},{c9,405,430,south,15,?Server3},{c10,175,250,south,3,?Server1},{c11,645,850,north,22,?Server4}],
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  create_cars(List,Number), 
+ % create_cars(List,Number), 
   %%%%start cars%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %gen_server:cast({server,?Server1},{start_car,yarin,175,10,south,2}),
-  %gen_server:cast({server,?Server4},{start_car,lotke,550,95,east,6}),
-  %gen_server:cast({server,?Server2},{start_car,elioz,0,520,east,11}),
-  %gen_server:cast({server,?Server4},{start_car,eliav,480,95,east,6}),
+  gen_server:cast({server,?Server1},{start_car,yarin,175,10,south,2}),
+  gen_server:cast({server,?Server4},{start_car,lotke,550,95,east,6}),
+  gen_server:cast({server,?Server2},{start_car,elioz,0,520,east,11}),
+  gen_server:cast({server,?Server4},{start_car,eliav,480,95,east,6}),
  
- %gen_server:cast({server,?Server4},{start_car,yanir,450,220,west,33}),
-  %gen_server:cast({server,?Server3},{start_car,meitar,570,635,east,18}),
-  %gen_server:cast({server,?Server1},{start_car,tal,300,95,east,4}),
-  %gen_server:cast({server,?Server1},{start_car,daniela,200,345,east,10}),
-  %gen_server:cast({server,?Server3},{start_car,naema,320,520,east,14}),
-   %gen_server:cast({server,?Server3},{start_car,raviv,405,430,south,15}),
-   %gen_server:cast({server,?Server1},{start_car,hadar,175,250,south,3}),
+ gen_server:cast({server,?Server4},{start_car,yanir,450,220,west,33}),
+  gen_server:cast({server,?Server3},{start_car,meitar,570,635,east,18}),
+  gen_server:cast({server,?Server1},{start_car,tal,300,95,east,4}),
+  gen_server:cast({server,?Server1},{start_car,daniela,200,345,east,10}),
+  gen_server:cast({server,?Server3},{start_car,naema,320,520,east,14}),
+   gen_server:cast({server,?Server3},{start_car,raviv,405,430,south,15}),
+   gen_server:cast({server,?Server1},{start_car,hadar,175,250,south,3}),
   %gen_server:cast({server,?Server4},{start_car,shahar,645,850,north,130}),
   %gen_server:cast({server,?Server3},{start_car,shaar,645,900,north,22}),
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -122,21 +122,21 @@ handle_info({nodeup,PC},State)->
 
 
 handle_event(#wx{event = #wxClose{}},State = #state {frame = Frame}) -> % close window event
-  io:format("Exiting\n"),
   wxWindow:destroy(Frame),
   wx:destroy(),
   {stop,normal,State}.
 
 handle_sync_event(#wx{event=#wxPaint{}}, _,  _State = #state{panel=MyPanel,map=Map,redcarn=RedCarN,redcarw=RedCarW,redcare=RedCarE,redcars=RedCarS,bluecarn=BlueCarN,bluecarw=BlueCarW,bluecare=BlueCarE,bluecars=BlueCarS})->
   DC=wxPaintDC:new(MyPanel),
- % io:format("Shalom\n"),
   wxDC:clear(DC),
   wxDC:drawBitmap(DC,Map,{0,0}),
   %wxDC:drawBitmap(DC,RedCarE,{1,1}),
+  %getting information about car location from servers
   CarS1=gen_server:call({server,?Server1},firstcar),
   CarS2=gen_server:call({server,?Server2},firstcar),
   CarS3=gen_server:call({server,?Server3},firstcar),
   CarS4=gen_server:call({server,?Server4},firstcar),
+  %display car's location at the screen%
   cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS1,?Server1),
   cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS2,?Server2),
   cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS3,?Server3),
@@ -218,27 +218,27 @@ createMap()->
   {BMap,BRedCarW,BRedCarN,BRedCarE,BRedCarS,BBlueCarW,BBlueCarN,BBlueCarE,BBlueCarS}.
 
 
-check_PC(PC_to_check,PC1,PC2,PC3,PC4) ->
-  Res = net_adm:ping(PC_to_check), % check if the PC the car is on is alive
-  case Res of
-    pong -> ok;
-    pang-> case PC_to_check of % if the PC is not alive, check the backup PC
-             ?Server1-> moveEtsCars(?Server2);
-             ?Server2-> moveEtsCars(?Server3);
-             ?Server3 -> moveEtsCars(?Server4);
-             ?Server4 ->moveEtsCars(?Server1)
-        end
-  end.
+%check_PC(PC_to_check,PC1,PC2,PC3,PC4) ->
+%  Res = net_adm:ping(PC_to_check), % check if the PC the car is on is alive
+%  case Res of
+ %   pong -> ok;
+  %  pang-> case PC_to_check of % if the PC is not alive, check the backup PC
+   %          ?Server1-> moveEtsCars(?Server2);
+    %         ?Server2-> moveEtsCars(?Server3);
+     %        ?Server3 -> moveEtsCars(?Server4);
+      %       ?Server4 ->moveEtsCars(?Server1)
+       % end
+ % end.
 
-moveEtsCars(PcToMove)->ik.
+moveEtsCars(_PcToMove)->ik.
 
 
  %gen_server:cast({server,?Server3},{start_car,shaar,645,900,north,22}),
-create_cars([],0)->
-  none;
-create_cars(_Data,0)->
-  none;
-create_cars(Data,Number)->
-  {Car,X,Y,Dir,Road,Server}=hd(Data),
-  gen_server:cast({server,Server},{start_car,Car,X,Y,Dir,Road}),
-  create_cars(tl(Data),Number-1).
+%create_cars([],0)->
+ % none;
+%create_cars(_Data,0)->
+%  none;
+%create_cars(Data,Number)->
+%  {Car,X,Y,Dir,Road,Server}=hd(Data),
+%  gen_server:cast({server,Server},{start_car,Car,X,Y,Dir,Road}),
+ % create_cars(tl(Data),Number-1).
