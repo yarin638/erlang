@@ -86,7 +86,7 @@ clear_path(Car,Close_Car)-> %check if the car that was before our car is far eno
   case Dir1 of
     south->
       if
-        (Cy2-Cy1>70) or (Road1=/=Road2) ->
+        (Cy2-Cy1>70) orelse (Road1=/=Road2) ->
           cars:clear_path(Car);
         true->
           timer:sleep(50),
@@ -94,7 +94,7 @@ clear_path(Car,Close_Car)-> %check if the car that was before our car is far eno
       end;
     north->
       if
-        (Cy1-Cy2>70) and (Road1=/=Road2) ->
+        (Cy1-Cy2>70) orelse (Road1=/=Road2) ->
           cars:clear_path(Car);
         true->
           timer:sleep(50),
@@ -102,7 +102,7 @@ clear_path(Car,Close_Car)-> %check if the car that was before our car is far eno
       end;
     west->
       if
-        (Cx1-Cx2>70 )and (Road1=/=Road2) ->
+        (Cx1-Cx2>70 )orelse (Road1=/=Road2) ->
           cars:clear_path(Car);
           true->
             timer:sleep(50),
@@ -110,7 +110,7 @@ clear_path(Car,Close_Car)-> %check if the car that was before our car is far eno
           end;
     east->
       if
-        (Cx2-Cx1>70) and (Road1=/=Road2)->
+        (Cx2-Cx1>70) orelse (Road1=/=Road2)->
           cars:clear_path(Car);
         true->
           timer:sleep(50),
