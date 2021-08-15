@@ -181,7 +181,7 @@ stright(cast, move_car4, Data) ->
   {next_state,stooping,Data} ;
 
 
-stright({call,From}, clear_path, Data) ->
+stright({call,_From}, clear_path, Data) ->
   {X,Y,Dir,Cname}=Data,
  %io:format("{~p,~p,~p, ets:~p}",[X,Y,Dir,ets:lookup(cars,Cname)]),
   if
@@ -210,13 +210,13 @@ stright(timeout, 50,  Data) ->
 
 
 
-stright({call,From}, {car_alert,Car2}, Data) ->
-  {X,Y,Dir,Cname}=Data,
+stright({call,From}, {car_alert,_Car2}, Data) ->
+  {_X,__Y,_Dir,_Cname}=Data,
   %io:format("{~p,~p,~p, ets:~p}",[X,Y,Dir,ets:lookup(cars,Cname)]),
   {next_state,stooping,Data,[{reply,From,stright}]} ;
 
 
-stright({call,From}, traffic_light_green, Data) ->
+stright({call,_From}, traffic_light_green, Data) ->
   {X,Y,Dir,Cname}=Data,
   %io:format("{~p,~p,~p, ets:~p}",[X,Y,Dir,ets:lookup(cars,Cname)]),
   if
@@ -227,87 +227,87 @@ stright({call,From}, traffic_light_green, Data) ->
 
 
 stright({call,From}, traffic_light_red, Data) ->
-  {X,Y,Dir,Cname}=Data,
+  {_X,_Y,_Dir,_Cname}=Data,
   %io:format("{~p,~p,~p, ets:~p}",[X,Y,Dir,ets:lookup(cars,Cname)]),
   {next_state,stooping,Data,[{reply,From,stright}]} ;
 
 stright({call,From}, traffic_light_orange, Data) ->
-  {X,Y,Dir,Cname}=Data,
+  {_X,_Y,_Dir,_Cname}=Data,
   %io:format("{~p,~p,~p, ets:~p}",[X,Y,Dir,ets:lookup(cars,Cname)]),
   {next_state,stooping,Data,[{reply,From,stright}]} ;
 
 
 stright({call,From}, turn_south, Data) ->
-  {X,Y,Dir,Cname}=Data,
+  {X,Y,_Dir,Cname}=Data,
   ets:update_element(cars,Cname,[{3,{X,Y+1}},{5,south}]),
   %io:format("{~p,~p,~p}",[X,Y,Dir]),
   {keep_state,{X,Y+1,south,Cname},[{reply,From,stright}]};
 
 stright({call,From}, turn_north, Data) ->
-  {X,Y,Dir,Cname}=Data,
+  {X,Y,_Dir,Cname}=Data,
   ets:update_element(cars,Cname,[{3,{X,Y-1}},{5,north}]),
  % io:format("{~p,~p,~p}",[X,Y,Dir]),
   {keep_state,{X,Y-1,north,Cname},[{reply,From,stright}]};
 
 stright({call,From}, turn_east, Data) ->
-  {X,Y,Dir,Cname}=Data,
+  {X,Y,_Dir,Cname}=Data,
   ets:update_element(cars,Cname,[{3,{X+1,Y}},{5,east}]),
  % io:format("{~p,~p,~p}",[X,Y,Dir]),
   {keep_state,{X+1,Y,east,Cname},[{reply,From,stright}]};
 
 stright({call,From}, turn_west, Data) ->
-  {X,Y,Dir,Cname}=Data,
+  {X,Y,_Dir,Cname}=Data,
   ets:update_element(cars,Cname,[{3,{X-1,Y}},{5,west}]),
  % io:format("{~p,~p,~p}",[X,Y,Dir]),
   {keep_state,{X-1,Y,west,Cname},[{reply,From,stright}]}.
 
 
 stooping({call,From}, {car_alert,Car2}, Data)->
-  {X,Y,Dir,Cname}=Data,
-  SensorPid4=spawn(alerts,clear_path,[Cname,Car2]),
+  {_X,_Y,_Dir,Cname}=Data,
+  spawn(alerts,clear_path,[Cname,Car2]),
  % io:format("{~p,~p,~p}",[X,Y,Dir]),
   {keep_state,Data,[{reply,From,stright}]};
 
 stooping({call,From}, traffic_light_red, Data)->
-  {X,Y,Dir,Cname}=Data,
+  {_X,_Y,_Dir,_Cname}=Data,
   %io:format("{~p,~p,~p}",[X,Y,Dir]),
   {keep_state,Data,[{reply,From,stright}]};
 
 stooping({call,From}, traffic_light_orange, Data)->
-  {X,Y,Dir,Cname}=Data,
+  {_X,_Y,_Dir,_Cname}=Data,
   %io:format("{~p,~p,~p}",[X,Y,Dir]),
   {keep_state,Data,[{reply,From,stright}]};
 
 stooping({call,From}, clear_path, Data)->
-  {X,Y,Dir,Cname}=Data,
+  {_X,_Y,_Dir,_Cname}=Data,
   %io:format("{~p,~p,~p}",[X,Y,Dir]),
   {next_state,stright,Data,[{reply,From,stright}]};
 
 stooping({call,From}, traffic_light_green, Data)->
-  {X,Y,Dir,Cname}=Data,
+  {_X,_Y,_Dir,_Cname}=Data,
   %io:format("{~p,~p,~p,satte=stooping gren}",[X,Y,Dir]),
   {next_state,stright,Data,[{reply,From,stright}]};
 
 stooping({call,From}, turn_south, Data) ->
-  {X,Y,Dir,Cname}=Data,
+  {X,Y,_Dir,Cname}=Data,
   %io:format("{~p,~p,~p}",[X,Y,Dir]),
   ets:update_element(cars,Cname,[{3,{X,Y+1}},{5,south}]),
   {keep_state,{X,Y+1,south,Cname},[{reply,From,stright}]};
 
 stooping({call,From}, turn_north, Data) ->
-  {X,Y,Dir,Cname}=Data,
+  {X,Y,_Dir,Cname}=Data,
   %io:format("{~p,~p,~p}",[X,Y,Dir]),
   ets:update_element(cars,Cname,[{3,{X,Y-1}},{5,north}]),
   {keep_state,{X,Y-1,north,Cname},[{reply,From,stright}]};
 
 stooping({call,From}, turn_west, Data) ->
-  {X,Y,Dir,Cname}=Data,
+  {X,Y,_Dir,Cname}=Data,
   %io:format("{~p,~p,~p}",[X,Y,Dir]),
   ets:update_element(cars,Cname,[{3,{X-1,Y}},{5,west}]),
   {keep_state,{X-1,Y,west,Cname},[{reply,From,stright}]};
 
 stooping({call,From}, turn_east, Data) ->
-  {X,Y,Dir,Cname}=Data,
+  {X,Y,_Dir,Cname}=Data,
   %io:format("{~p,~p,~p}",[X,Y,Dir]),
   ets:update_element(cars,Cname,[{3,{X+1,Y}},{5,east}]),
   {keep_state,{X+1,Y,east,Cname},[{reply,From,stright}]}.

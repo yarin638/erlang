@@ -53,10 +53,10 @@ init([]) ->
  % ets:insert(cars,{yarin,0,{290,400},0,east,red}),
   %spawn(alerts,switch_area,[yarin]),
   %traffic_light:start(0,{1137,100},t1),
-  %cars:start(shahar,645,100,north,22),
-  %cars:start(yarin,645,70,north,22),
-  %cars:start(shahar,800,100,north,22),
-  %traffic_light:start({22,645,65,red},t1),
+  cars:start(shahar,645,100,north,22),
+  cars:start(yarin,645,70,north,22),
+  cars:start(shahar,800,100,north,22),
+  traffic_light:start({22,645,65,red},t1),
   %traffic_light:start({1,1055,100,green},t2),
 
   {ok, #server_state{}}.
