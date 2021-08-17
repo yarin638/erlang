@@ -47,10 +47,11 @@ start_link() ->
 %%%%%%%%%
 init([]) ->
   ets:new(cars,[set,public,named_table]), ets:new(junction,[set,public,named_table]),ets:new(traffic_light,[set,public,named_table]),
+  ets:new(cars_stats,[set,public,named_table]),
   %ets:insert(junction,{{1130,105},[0,1],[2,3],[east,north]}),
   %ets:lookup(junction,{1,7}),
- %cars:start(yan,200,600,east,0),
- % ets:insert(cars,{yarin,0,{290,400},0,east,red}),
+  %cars:start(yan,200,600,east,0),
+  % ets:insert(cars,{yarin,0,{290,400},0,east,red}),
   %spawn(alerts,switch_area,[yarin]),
   %traffic_light:start(0,{1137,100},t1),
   %cars:start(shahar,645,100,north,22),
@@ -71,9 +72,13 @@ init([]) ->
   {noreply, NewState :: #server_state{}, timeout() | hibernate} |
   {stop, Reason :: term(), Reply :: term(), NewState :: #server_state{}} |
   {stop, Reason :: term(), NewState :: #server_state{}}).
+
 handle_call(firstcar, _From, State) ->
   CarTosend=ets:lookup(cars,ets:first(cars)),
   {reply,CarTosend, State};
+
+handle_call(stats, _From, State)->
+  {reply,ets:tab2list(cars_stats),State};
 
 handle_call({nextcar,Car}, _From, State) ->
   Bool=ets:member(cars,Car),
