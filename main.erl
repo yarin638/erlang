@@ -17,7 +17,7 @@
 %-define(Server3, 'eliav4670@yarinabutbul-VirtualBox').
 %-define(Server4, 'eliav4670@yarinabutbul-VirtualBox').
 
--export([start/0,init/1,handle_event/2,handle_info/2,handle_sync_event/3,moveEtsCars/1]).
+-export([start/0,init/1,handle_event/2,handle_info/2,handle_sync_event/3,check_PC/1]).
 -define(Mx,781).
 -define(My,1024).
 -define(Timer,67).
@@ -28,20 +28,26 @@ start() ->
   wx_object:start({local,?SERVER},?MODULE,[],[]).
 
 init([])->
-  %ets:new(cars,[set,public,named_table]),
-  %ets:new(junction,[set,public,named_table]),ets:new(traffic_light,[set,public,named_table]),
-  %ets:insert(traffic_light,{R,{X,Y},self()}),
-  net_kernel:connect_node(?Server1),
-  net_kernel:connect_node(?Server2),
-  net_kernel:connect_node(?Server3),
-  net_kernel:connect_node(?Server4),
+  ets:new(cars,[set,public,named_table]),
+  ets:new(servers,[set,public,named_table]),
+  ets:new(junction,[set,public,named_table]),ets:new(traffic_light,[set,public,named_table]),
+  ets:insert(servers,{?Server1,on}),
+  ets:insert(servers,{?Server2,on}),
+  ets:insert(servers,{?Server3,on}),
+  ets:insert(servers,{?Server4,on}),
+  %net_kernel:connect_node(?Server1),
+  %net_kernel:connect_node(?Server2),
+  %net_kernel:connect_node(?Server3),
+  %net_kernel:connect_node(?Server4),
   rpc:call(?Server1,server,start_link,[]),
   rpc:call(?Server2,server,start_link,[]),
   rpc:call(?Server3,server,start_link,[]),
   rpc:call(?Server4,server,start_link,[]),
   %%start traffic_light%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   gen_server:cast({server,?Server1},{start_traffic_light,1,120,95,red,t1}),
+  ets:insert(traffic_light,{t1,1,120,95,red,?Server1}),
   gen_server:cast({server,?Server1},{start_traffic_light,2,175,40,green,t2}),
+  ets:insert(traffic_light,{t2,2,175,40,green,?Server1}),
   gen_server:cast({server,?Server4},{start_traffic_light,4,340,95,red,t3}),
   gen_server:cast({server,?Server4},{start_traffic_light,5,395,160,green,t4}),
   gen_server:cast({server,?Server4},{start_traffic_light,6,590,95,green,t5}),
@@ -58,13 +64,14 @@ init([])->
   gen_server:cast({server,?Server3},{start_traffic_light,25,700,760,green,t15}),
   gen_server:cast({server,?Server2},{start_traffic_light,12,80,745,red,t16}),
   gen_server:cast({server,?Server2},{start_traffic_light,19,135,800,green,t17}),
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%start junc%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   gen_server:cast({server,?Server1},{start_junc,{175,95},[1,2],[3,4],[south,east]}),
+  ets:insert(junction,{{175,95},[1,2],[3,4],[south,east],?Server1}),
   gen_server:cast({server,?Server4},{start_junc,{395,95},[4,5],[6],[east]}),
   gen_server:cast({server,?Server4},{start_junc,{645,95},[6,7],[8],[north]}),
   gen_server:cast({server,?Server1},{start_junc,{175,345},[3],[9,10],[south,east]}),
+  ets:insert(junction,{{175,345},[3],[9,10],[south,east],?Server1}),
   gen_server:cast({server,?Server4},{start_junc,{395,345},[10,35],[15],[south]}),
   gen_server:cast({server,?Server2},{start_junc,{175,520},[9,13],[14],[east]}),
   gen_server:cast({server,?Server3},{start_junc,{405,520},[14,15],[16],[south]}),
@@ -85,20 +92,26 @@ init([])->
   % create_cars(List,Number),
   %%%%start cars%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   gen_server:cast({server,?Server1},{start_car,yarin,175,10,south,2}),
+  ets:insert(cars,{yarin175,2,175,10,south,?Server1}),
   gen_server:cast({server,?Server4},{start_car,lotke,550,95,east,6}),
   gen_server:cast({server,?Server2},{start_car,elioz,0,520,east,11}),
   gen_server:cast({server,?Server4},{start_car,eliav,480,95,east,6}),
-
   gen_server:cast({server,?Server4},{start_car,yanir,450,220,west,33}),
   gen_server:cast({server,?Server3},{start_car,meitar,570,635,east,18}),
-  gen_server:cast({server,?Server1},{start_car,tal,300,95,east,4}),
+  %gen_server:cast({server,?Server1},{start_car,tal,300,95,east,4}),
   gen_server:cast({server,?Server1},{start_car,daniela,200,345,east,10}),
+  ets:insert(cars,{daniela200,10,200,345,east,?Server1}),
   gen_server:cast({server,?Server3},{start_car,naema,320,520,east,14}),
   gen_server:cast({server,?Server3},{start_car,raviv,405,430,south,15}),
   gen_server:cast({server,?Server1},{start_car,hadar,175,250,south,3}),
   %gen_server:cast({server,?Server4},{start_car,shahar,645,850,north,130}),
   %gen_server:cast({server,?Server3},{start_car,shaar,645,900,north,22}),
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  spawn(main,check_PC,[?Server1]),
+  spawn(main,check_PC,[?Server2]),
+  spawn(main,check_PC,[?Server3]),
+  spawn(main,check_PC,[?Server4]),
 
   WxServer=wx:new(),
   MyFrame=wxFrame:new(WxServer,123,"TrafficMap",[{size,{?Mx,?My}}]),
@@ -143,17 +156,34 @@ handle_sync_event(#wx{event=#wxPaint{}}, _,  _State = #state{panel=MyPanel,map=M
   DC=wxPaintDC:new(MyPanel),
   wxDC:clear(DC),
   wxDC:drawBitmap(DC,Map,{0,0}),
+
+
+
+
   %wxDC:drawBitmap(DC,RedCarE,{1,1}),
   %getting information about car location from servers
-  CarS1=gen_server:call({server,?Server1},firstcar),
-  CarS2=gen_server:call({server,?Server2},firstcar),
-  CarS3=gen_server:call({server,?Server3},firstcar),
-  CarS4=gen_server:call({server,?Server4},firstcar),
+  [{_,Status1}]=ets:lookup(servers,?Server1),
+  if Status1==on->CarS1=gen_server:call({server,?Server1},firstcar),
+    cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS1,?Server1);
+    true->nothing end,
+
+  [{_,Status2}]=ets:lookup(servers,?Server2),
+  if Status2==on->  CarS2=gen_server:call({server,?Server2},firstcar),
+    cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS2,?Server2);
+    true->nothing end,
+  [{_,Status3}]=ets:lookup(servers,?Server3),
+  if Status3==on->  CarS3=gen_server:call({server,?Server3},firstcar),
+    cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS3,?Server3);
+    true-> nothing end,
+
+  [{_,Status4}]=ets:lookup(servers,?Server4),
+  if Status4==on-> CarS4=gen_server:call({server,?Server4},firstcar),
+    cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS4,?Server4);
+    true->nothing end;
   %display car's location at the screen%
-  cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS1,?Server1),
-  cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS2,?Server2),
-  cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS3,?Server3),
-  cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,CarS4,?Server4);
+
+
+
 
 
 handle_sync_event(_Event,_,State) ->
@@ -163,7 +193,9 @@ cars_movement(_,_,_,_,_,_,_,_,_,[],_)->
   ok;
 cars_movement(Panel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,Car,ServerN)->
   DC=wxClientDC:new(Panel),
-  [{CarNumber1,_Road,{Cx,Cy},_Speed,Dir,Color}]=Car,
+  [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,Color}]=Car,
+  %ets:update_element(cars,CarNumber1,[{2,Road},{3,Cx},{4,Cy},{5,Dir}]),
+  ets:insert(cars,{CarNumber1,Road,Cx,Cy,Dir,ServerN}),
   %io:format("~p",[ets:lookup(cars,Car)]),
   case Color of
     red->
@@ -189,9 +221,13 @@ cars_movement(Panel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,B
           wxDC:drawBitmap(DC,BlueCarW,{Cx,Cy})
       end
   end,
-  NextCar=gen_server:call({server,ServerN},{nextcar,CarNumber1}),
+  [{_,Status}]=ets:lookup(servers,ServerN),
+  if
+    Status==on-> NextCar=gen_server:call({server,ServerN},{nextcar,CarNumber1}),
 %  io:format("Nextcar=~p",[NextCar]),
-  cars_movement(Panel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,NextCar,ServerN).
+                  cars_movement(Panel,RedCarN,RedCarW,RedCarS,RedCarE,BlueCarN,BlueCarW,BlueCarS,BlueCarE,NextCar,ServerN);
+
+    true->nothing end.
 
 createMap()->
   %create Map
@@ -231,19 +267,39 @@ createMap()->
   {BMap,BRedCarW,BRedCarN,BRedCarE,BRedCarS,BBlueCarW,BBlueCarN,BBlueCarE,BBlueCarS}.
 
 
-%check_PC(PC_to_check,PC1,PC2,PC3,PC4) ->
-%  Res = net_adm:ping(PC_to_check), % check if the PC the car is on is alive
-%  case Res of
-%   pong -> ok;
-%  pang-> case PC_to_check of % if the PC is not alive, check the backup PC
-%          ?Server1-> moveEtsCars(?Server2);
-%         ?Server2-> moveEtsCars(?Server3);
-%        ?Server3 -> moveEtsCars(?Server4);
-%       ?Server4 ->moveEtsCars(?Server1)
-% end
-% end.
+moveCarsToOtherPc(PC_down,PcToMove,[])->ok;
+moveCarsToOtherPc(PC_down,PcToMove,'$end_of_table')->ok;
+moveCarsToOtherPc(PC_down,PcToMove,CarToMove)->[{CarNumber1,Road1,Cx1,Cy1,Dir1,Server}]=CarToMove,
+  if
+    Server==PC_down->  gen_server:cast({server,PcToMove},{start_car,CarNumber1,Cx1,Cy1,Dir1,Road1}),NextCar=ets:lookup(cars,ets:next(cars,CarNumber1)),io:format("~n~n~p~n~n",[NextCar]),moveCarsToOtherPc(PC_down,PcToMove,NextCar);
+    true->moveCarsToOtherPc(PC_down,PcToMove,ets:lookup(cars,ets:next(cars,CarNumber1)))
+  end.
 
-moveEtsCars(_PcToMove)->ik.
+
+moveTrafficLightToOtherPc(_PC_down,_PcToMove,[])->ok;
+moveTrafficLightToOtherPc(_PC_down,_PcToMove,'$end_of_table')->ok;
+moveTrafficLightToOtherPc(PC_down,PcToMove,TrafficToMOve)->[{Name,Road,X,Y,Color,Server}]=TrafficToMOve,
+  if
+    Server==PC_down->gen_server:cast({server,PcToMove},{start_traffic_light,Road,X,Y,Color,Name}),moveTrafficLightToOtherPc(PC_down,PcToMove,ets:lookup(traffic_light,ets:next(traffic_light,Name)));
+    true->moveTrafficLightToOtherPc(PC_down,PcToMove,ets:lookup(traffic_light,ets:next(traffic_light,Name)))
+  end.
+
+moveJunctionToOtherpc(_PC_down,_PcToMove,[])->ok;
+moveJunctionToOtherpc(_,_,'$end_of_table')->ok;
+moveJunctionToOtherpc(PC_down,PcToMove,JuncToMOve)->[{{X,Y},Listin,ListOut,ListDir,Server}]=JuncToMOve,
+  if
+    Server==PC_down->   gen_server:cast({server,PcToMove},{start_junc,{X,Y},Listin,ListOut,ListDir}),moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:next(junction,{X,Y})));
+    true->moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:next(junction,{X,Y}))) end.
+
+checkWichBackupIsALIVE(PC_down,PcToMove)->[{_,Status}]=ets:lookup(servers,PcToMove),if Status==off->checkWichBackupIsALIVE(PC_down,ets:next(servers,PcToMove));
+                                                                                true->moveCarsToOtherPc(PC_down,PcToMove,ets:lookup(cars,ets:first(cars))),
+                                                                                  moveTrafficLightToOtherPc(PC_down,PcToMove,ets:lookup(traffic_light,ets:first(traffic_light))),
+                                                                                  moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:first(junction))) end.
+
+check_PC(PC_to_check) ->erlang:monitor_node(PC_to_check, true),
+  receive
+{nodedown,_}-> ets:update_element(servers,PC_to_check,[{2,off}]), [{_,Status1}]=ets:lookup(servers,?Server1),io:format("~n~n~n~n~n~nStatus=~p",[Status1]),checkWichBackupIsALIVE(PC_to_check,ets:first(servers)) end.
+
 
 
 %gen_server:cast({server,?Server3},{start_car,shaar,645,900,north,22}),
