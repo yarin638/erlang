@@ -187,10 +187,14 @@ handle_event(#wx{event = #wxClose{}},State = #state {frame = Frame}) -> % close 
   Data2=add_last(Ets2,[]),
   Data3=add_last(Ets3,[]),
   Data4=add_last(Ets4,[]),
-  io:format("area 1:~p~n",[Data1]),
-  io:format("area 2:~p~n",[Data2]),
-  io:format("area 3:~p~n",[Data3]),
-  io:format("area 4:~p~n",[Data4]),
+  io:format("area 1:~n"),
+  create_Stats(Data1,0,0,0),
+  io:format("area 2:~n"),
+  create_Stats(Data2,0,0,0),
+  io:format("area 3:~n"),
+  create_Stats(Data3,0,0,0),
+  io:format("area 4:~n"),
+  create_Stats(Data4,0,0,0),
   wxWindow:destroy(Frame),
   wx:destroy(),
   {stop,normal,State}.
@@ -370,3 +374,18 @@ add_last([H|T],NewList) ->
       List=lists:append(NewList,[{Car,Drive,Stop}]),
       add_last(T,List)
   end.
+  
+create_Stats([],DriveSum,StopSum,Counter)->
+  PrecentD=DriveSum/(DriveSum+StopSum)*100,
+  PrecentS=100-PrecentD,
+  AvgD=DriveSum/Counter,
+  AvgS=StopSum/Counter,
+  AvgSpeed=(AvgD)*20/((AvgD+AvgS)),
+  io:format("Cars Avg time driving:~p seconds~n",[AvgD/1000000]),
+  io:format("Cars Avg time stopping:~p seconds~n",[AvgS/1000000]),
+  io:format("Cars driving time in precentage:~p%~n",[PrecentD]),
+  io:format("Cars stopping time in precentage:~p%~n",[PrecentS]),
+  io:format("Cars Avg speed:~p meter/second~n",[AvgSpeed]);
+create_Stats([H|T],DriveSum,StopSum,Counter)->
+  {_Cname,Drive,Stop}=H,
+  create_Stats(T,DriveSum+Drive,Stop+StopSum,Counter+1).
