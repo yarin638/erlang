@@ -78,6 +78,29 @@ init([]) ->
   {stop, Reason :: term(), Reply :: term(), NewState :: #server_state{}} |
   {stop, Reason :: term(), NewState :: #server_state{}}).
 
+
+handle_call(firstTl, _From, State) ->
+  [{R1,{Jx,Jy},TLPid}]=ets:lookup(traffic_light,ets:first(traffic_light)),
+  {Color,0}=sys:get_state(TLPid),
+  TlTosend=[{R1,{Jx,Jy},Color}],
+  {reply,TlTosend,State};
+
+handle_call({nextTl,Tl}, _From, State) ->
+  Bool=ets:member(traffic_light,Tl),
+  if
+    Bool=:=true->
+      NextTl=ets:lookup(traffic_light,ets:next(traffic_light,Tl)),
+      if
+        NextTl==[]->
+          TlTosend={reply,[],State};
+        true->
+          [{R1,{Jx,Jy},TLPid}]=NextTl,
+            {Color,0}=sys:get_state(TLPid),
+            TlTosend=[{R1,{Jx,Jy},Color}]
+      end;
+    true->TlTosend=[] end,
+  {reply,TlTosend, State};
+
 handle_call(firstcar, _From, State) ->
   CarTosend=ets:lookup(cars,ets:first(cars)),
   {reply,CarTosend, State};
