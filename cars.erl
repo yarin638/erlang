@@ -174,14 +174,22 @@ stright(cast, move_car3, Data) ->
   {next_state,stooping,Data} ;
 
 stright(cast, move_car4, Data) ->
+  [{_,Status4}]=ets:lookup(servers,?Server4),
   {_,_,_,Cname}=Data,
   update_time(Cname,move_area),
   %io:format("in statem"),
   [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Cname),
+  if
+   Status4==on->
   case Dir of
     east->gen_server:cast({server,?Server4},{start_car,CarNumber1,Cx+3,Cy,Dir,Road});
     north->gen_server:cast({server,?Server4},{start_car,CarNumber1,Cx,Cy-3,Dir,Road})
-  end,
+  end;
+     true->
+       case Dir of
+         east -> sendToNextServer(CarNumber1,Cx+3,Cy,Dir,Road,ets:first(servers));
+         north->sendToNextServer(CarNumber1,Cx,Cy-3,Dir,Road,ets:first(servers))end
+         end,
   %io:format("after lookup"),
   ets:update_element(cars,Cname,[{2,400},{3,{100000,10000}},{5,south}]),
   %exit(get(sens1),kill), exit(get(sens2),kill), exit(get(sens3),kill), exit(get(sens4),kill),
@@ -340,4 +348,8 @@ update_time(Car,move_area)->
   ets:update_element(cars_stats,Cname,[{2,0},{3,0},{4,Drive+New_Time}]).
 
 
+
+sendToNextServer(CarNumber1,Cx,Cy,Dir,Road,Server)-> [{_,Status}]=ets:lookup(servers,Server),
+                                      if Status==off->sendToNextServer(CarNumber1,Cx,Cy,Dir,Road,ets:next(servers,Server));
+                                        true->gen_server:cast({server,Server},{start_car,CarNumber1,Cx,Cy,Dir,Road}) end.
 

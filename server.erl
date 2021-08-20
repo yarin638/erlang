@@ -10,7 +10,7 @@
 -author("yarinabutbul").
 
 -behaviour(gen_server).
-
+-include("header.hrl").
 %% API
 -export([start_link/0]).
 
@@ -48,6 +48,11 @@ start_link() ->
 init([]) ->
   ets:new(cars,[set,public,named_table]), ets:new(junction,[set,public,named_table]),ets:new(traffic_light,[set,public,named_table]),
   ets:new(cars_stats,[set,public,named_table]),
+  ets:new(servers,[set,public,named_table]),
+  ets:insert(servers,{?Server1,on}),
+  ets:insert(servers,{?Server2,on}),
+  ets:insert(servers,{?Server3,on}),
+  ets:insert(servers,{?Server4,on}),
   %ets:insert(junction,{{1130,105},[0,1],[2,3],[east,north]}),
   %ets:lookup(junction,{1,7}),
   %cars:start(yan,200,600,east,0),
@@ -101,6 +106,13 @@ handle_cast({start_car,Name,X,Y,Dir,Road}, State) ->
   Newname=makeAnAtom(X,Name),
   cars:start(Newname,X,Y,Dir,Road),
   {noreply, State};
+
+handle_cast({server_down,Server}, State) ->
+  %io:format("car started:~p,~p,~p,~p",[Name,X,Y,Dir]),
+  %io:format("starting car"),
+  ets:update_element(servers,Server,[{2,off}]),
+  {noreply, State};
+
 handle_cast({start_traffic_light,Road,X,Y,Color,Name}, State) ->
   traffic_light:start({Road,X,Y,Color},Name),
   {noreply, State};
