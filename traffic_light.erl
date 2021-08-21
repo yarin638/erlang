@@ -65,7 +65,7 @@ red(EventType, EventContent, Data) ->
 yellowFormRed(timeout, 6000,  Data) ->
   %% Go to 'on', increment count and reply
   %% that the resulting status is 'on'
-  {next_state,green,Data+1,[{timeout,6000,lock}]};
+  {next_state,green,Data,[{timeout,6000,lock}]};
 
 yellowFormRed(timeout, lock,  Data) ->
   %io:format("green~n"),
@@ -78,7 +78,7 @@ yellowFormRed(EventType, EventContent, Data) ->
 yellowFormGreen(timeout, 6000,  Data) ->
   %% Go to 'on', increment count and reply
   %% that the resulting status is 'on'
-  {next_state,red,Data+1,[{timeout,6000,lock}]};
+  {next_state,red,Data,[{timeout,6000,lock}]};
 
 yellowFormGreen(timeout, lock,  Data) ->
   %io:format("red~n"),

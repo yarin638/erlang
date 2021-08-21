@@ -139,7 +139,7 @@ car_alert(Car,P_car)->
         south->
           if
             (Cy2-Cy1<50) and (Cy2-Cy1>0 )->
-              cars:car_alert(Car,P_car),
+              cars:car_alert(Car,CarNumber2),
 	      timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->
@@ -148,7 +148,7 @@ car_alert(Car,P_car)->
         north->
           if
             (Cy1-Cy2<50 )and( Cy1-Cy2>0 )->
-              cars:car_alert(Car,P_car),
+              cars:car_alert(Car,CarNumber2),
 	      timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->
@@ -157,7 +157,7 @@ car_alert(Car,P_car)->
         west->
           if
             (Cx1-Cx2<50) and (Cx1-Cx2>0) ->
-              cars:car_alert(Car,P_car),
+              cars:car_alert(Car,CarNumber2),
 	      timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->
@@ -166,7 +166,7 @@ car_alert(Car,P_car)->
         east->
           if
             (Cx2-Cx1<50) and( Cx2-Cx1>0 )->
-              cars:car_alert(Car,P_car),
+              cars:car_alert(Car,CarNumber2),
               timer:sleep(500),
               car_alert(Car,ets:first(cars));
             true->

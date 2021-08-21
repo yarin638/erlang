@@ -328,8 +328,8 @@ createMap()->
   {BMap,BRedCarW,BRedCarN,BRedCarE,BRedCarS,BGreen,Bred,Byellow}.
 
 
-moveCarsToOtherPc(PC_down,PcToMove,[])->ok;
-moveCarsToOtherPc(PC_down,PcToMove,'$end_of_table')->ok;
+moveCarsToOtherPc(_PC_down,_PcToMove,[])->ok;
+moveCarsToOtherPc(_PC_down,_PcToMove,'$end_of_table')->ok;
 moveCarsToOtherPc(PC_down,PcToMove,CarToMove)->[{CarNumber1,Road1,Cx1,Cy1,Dir1,Server}]=CarToMove,
   if
     Server==PC_down->  gen_server:cast({server,PcToMove},{start_car,CarNumber1,Cx1,Cy1,Dir1,Road1}),NextCar=ets:lookup(cars,ets:next(cars,CarNumber1)),io:format("~n~n~p~n~n",[NextCar]),moveCarsToOtherPc(PC_down,PcToMove,NextCar);
@@ -337,12 +337,12 @@ moveCarsToOtherPc(PC_down,PcToMove,CarToMove)->[{CarNumber1,Road1,Cx1,Cy1,Dir1,S
   end.
 
 
-moveTrafficLightToOtherPc(_PC_down,_PcToMove,[])->ok;
-moveTrafficLightToOtherPc(_PC_down,_PcToMove,'$end_of_table')->ok;
-moveTrafficLightToOtherPc(PC_down,PcToMove,TrafficToMOve)->[{Road,X,Y,Color,Server}]=TrafficToMOve,
+moveTrafficLightToOtherPc(Counter,_PC_down,_PcToMove,[])->ok;
+moveTrafficLightToOtherPc(Counter,_PC_down,_PcToMove,'$end_of_table')->ok;
+moveTrafficLightToOtherPc(Counter,PC_down,PcToMove,TrafficToMOve)->[{Road,X,Y,Color,Server}]=TrafficToMOve,
   if
-    Server==PC_down->gen_server:cast({server,PcToMove},{start_traffic_light,Road,X,Y,Color,Name}),moveTrafficLightToOtherPc(PC_down,PcToMove,ets:lookup(traffic_light,ets:next(traffic_light,Name)));
-    true->moveTrafficLightToOtherPc(PC_down,PcToMove,ets:lookup(traffic_light,ets:next(traffic_light,Name)))
+    Server==PC_down->Name=makeAnAtom(Counter,k),gen_server:cast({server,PcToMove},{start_traffic_light,Road,X,Y,Color,Name}),moveTrafficLightToOtherPc(Counter+1,PC_down,PcToMove,ets:lookup(traffic_light,ets:next(traffic_light,Road)));
+    true->Name=makeAnAtom(Counter,k),moveTrafficLightToOtherPc(Counter,PC_down,PcToMove,ets:lookup(traffic_light,ets:next(traffic_light,Road)))
   end.
 
 moveJunctionToOtherpc(_PC_down,_PcToMove,[])->ok;
@@ -354,7 +354,7 @@ moveJunctionToOtherpc(PC_down,PcToMove,JuncToMOve)->[{{X,Y},Listin,ListOut,ListD
 
 checkWichBackupIsALIVE(PC_down,PcToMove)->[{_,Status}]=ets:lookup(servers,PcToMove),if Status==off->checkWichBackupIsALIVE(PC_down,ets:next(servers,PcToMove));
                                                                                       true->moveCarsToOtherPc(PC_down,PcToMove,ets:lookup(cars,ets:first(cars))),
-                                                                                        moveTrafficLightToOtherPc(PC_down,PcToMove,ets:lookup(traffic_light,ets:first(traffic_light))),
+                                                                                        moveTrafficLightToOtherPc(1,PC_down,PcToMove,ets:lookup(traffic_light,ets:first(traffic_light))),
                                                                                         moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:first(junction))) end.
 
 check_PC(PC_to_check) ->erlang:monitor_node(PC_to_check, true),
@@ -410,3 +410,6 @@ create_Stats([],DriveSum,StopSum,Counter)->
 create_Stats([H|T],DriveSum,StopSum,Counter)->
   {_Cname,Drive,Stop}=H,
   create_Stats(T,DriveSum+Drive,Stop+StopSum,Counter+1).
+
+
+makeAnAtom(X,Name)->list_to_atom(string:join([atom_to_list(Name),integer_to_list(X)],"")).

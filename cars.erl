@@ -244,9 +244,10 @@ stright(timeout, 50,  Data) ->
     true->ets:update_element(cars,Cname,[{3,{X+1,Y}},{5,east}]),{keep_state,{X+1,Y,Dir,Cname},[{state_timeout,50,time}]} end;
 
 
-stright({call,From}, {car_alert,_Car2}, Data) ->
+stright({call,From}, {car_alert,Car2}, Data) ->
   {_X,__Y,_Dir,Cname}=Data,
   update_time(Cname,stop),
+  spawn(alerts,clear_path,[Cname,Car2]),
   %io:format("{~p,~p,~p, ets:~p}",[X,Y,Dir,ets:lookup(cars,Cname)]),
   {next_state,stooping,Data,[{reply,From,stright}]} ;
 
