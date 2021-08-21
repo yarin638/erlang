@@ -31,6 +31,8 @@ init([])->
   ets:new(cars,[set,public,named_table]),
   ets:new(servers,[set,public,named_table]),
   ets:new(junction,[set,public,named_table]),ets:new(traffic_light,[set,public,named_table]),
+  ets:new(traffic_light_number,[set,public,named_table]),
+  ets:insert(traffic_light_number,{number,1}),
   ets:insert(servers,{?Server1,on}),
   ets:insert(servers,{?Server2,on}),
   ets:insert(servers,{?Server3,on}),
@@ -110,7 +112,7 @@ init([])->
   ets:insert(junction,{{645,635},[18,24],[26],[north],?Server3}),
 
   gen_server:cast({server,?Server3},{start_junc,{645,520},[26],[27,34],[east,north]}),
-  ets:insert(junction,{{645,560},[26],[27,34],[east,north],?Server3}),
+  ets:insert(junction,{{645,520},[26],[27,34],[east,north],?Server3}),
 
   gen_server:cast({server,?Server3},{start_junc,{645,760},[22,25],[24],[north]}),
   ets:insert(junction,{{645,760},[22,25],[24],[north],?Server3}),
@@ -228,8 +230,8 @@ handle_sync_event(#wx{event=#wxPaint{}}, _,  _State = #state{panel=MyPanel,map=M
     off-> ok end,
 
   [{_,Status4}]=ets:lookup(servers,?Server4),
-  io:format("status of server 4:~p~n",[Status4]),
-  case Status4 of on-> io:format("entered?~n"),CarS4=gen_server:call({server,?Server4},firstcar),
+  %io:format("status of server 4:~p~n",[Status4]),
+  case Status4 of on->CarS4=gen_server:call({server,?Server4},firstcar),
     cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,CarS4,?Server4),
     TlS4=gen_server:call({server,?Server4},firstTl),
     printTl(MyPanel,Green,Red,Yellow,TlS4,?Server4);
@@ -332,13 +334,13 @@ moveCarsToOtherPc(_PC_down,_PcToMove,[])->ok;
 moveCarsToOtherPc(_PC_down,_PcToMove,'$end_of_table')->ok;
 moveCarsToOtherPc(PC_down,PcToMove,CarToMove)->[{CarNumber1,Road1,Cx1,Cy1,Dir1,Server}]=CarToMove,
   if
-    Server==PC_down->  gen_server:cast({server,PcToMove},{start_car,CarNumber1,Cx1,Cy1,Dir1,Road1}),NextCar=ets:lookup(cars,ets:next(cars,CarNumber1)),io:format("~n~n~p~n~n",[NextCar]),moveCarsToOtherPc(PC_down,PcToMove,NextCar);
+    Server==PC_down->  gen_server:cast({server,PcToMove},{start_car,CarNumber1,Cx1,Cy1,Dir1,Road1}),NextCar=ets:lookup(cars,ets:next(cars,CarNumber1)),moveCarsToOtherPc(PC_down,PcToMove,NextCar);
     true->moveCarsToOtherPc(PC_down,PcToMove,ets:lookup(cars,ets:next(cars,CarNumber1)))
   end.
 
 
-moveTrafficLightToOtherPc(Counter,_PC_down,_PcToMove,[])->ok;
-moveTrafficLightToOtherPc(Counter,_PC_down,_PcToMove,'$end_of_table')->ok;
+moveTrafficLightToOtherPc(Counter,_PC_down,_PcToMove,[])->ets:update_element(traffic_light_number,number,[{2,Counter}]),ok;
+moveTrafficLightToOtherPc(Counter,_PC_down,_PcToMove,'$end_of_table')->ets:update_element(traffic_light_number,number,[{2,Counter}]),ok;
 moveTrafficLightToOtherPc(Counter,PC_down,PcToMove,TrafficToMOve)->[{Road,X,Y,Color,Server}]=TrafficToMOve,
   if
     Server==PC_down->Name=makeAnAtom(Counter,k),gen_server:cast({server,PcToMove},{start_traffic_light,Road,X,Y,Color,Name}),moveTrafficLightToOtherPc(Counter+1,PC_down,PcToMove,ets:lookup(traffic_light,ets:next(traffic_light,Road)));
@@ -352,9 +354,9 @@ moveJunctionToOtherpc(PC_down,PcToMove,JuncToMOve)->[{{X,Y},Listin,ListOut,ListD
     Server==PC_down->   gen_server:cast({server,PcToMove},{start_junc,{X,Y},Listin,ListOut,ListDir}),moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:next(junction,{X,Y})));
     true->moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:next(junction,{X,Y}))) end.
 
-checkWichBackupIsALIVE(PC_down,PcToMove)->[{_,Status}]=ets:lookup(servers,PcToMove),if Status==off->checkWichBackupIsALIVE(PC_down,ets:next(servers,PcToMove));
+checkWichBackupIsALIVE(PC_down,PcToMove)->[{_,Counter}]=ets:lookup(traffic_light_number,number),[{_,Status}]=ets:lookup(servers,PcToMove),if Status==off->checkWichBackupIsALIVE(PC_down,ets:next(servers,PcToMove));
                                                                                       true->moveCarsToOtherPc(PC_down,PcToMove,ets:lookup(cars,ets:first(cars))),
-                                                                                        moveTrafficLightToOtherPc(1,PC_down,PcToMove,ets:lookup(traffic_light,ets:first(traffic_light))),
+                                                                                        moveTrafficLightToOtherPc(Counter,PC_down,PcToMove,ets:lookup(traffic_light,ets:first(traffic_light))),
                                                                                         moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:first(junction))) end.
 
 check_PC(PC_to_check) ->erlang:monitor_node(PC_to_check, true),
