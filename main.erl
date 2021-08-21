@@ -85,7 +85,7 @@ init([])->
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%start junc%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   gen_server:cast({server,?Server1},{start_junc,{175,95},[1,2],[3,4],[south,east]}),
-  ets:insert(junction,{{175,95},[1,2],[3,4],[south,east],?Server1}),
+  ets:insert(junction,{{175,95},[1,2],[3,6],[south,east],?Server1}),
 
   gen_server:cast({server,?Server4},{start_junc,{395,95},[4,5],[6],[east]}),
   ets:insert(junction,{{395,95},[4,5],[6],[east],?Server4}),
@@ -183,22 +183,22 @@ handle_info({nodeup,PC},State)->
 
 handle_event(#wx{event = #wxClose{}},State = #state {frame = Frame}) -> % close window event
   io:format("Printing Statistics:~n"),
-  Ets1=gen_server:call({server,?Server1},stats),
-  Ets2=gen_server:call({server,?Server2},stats),
-  Ets3=gen_server:call({server,?Server3},stats),
-  Ets4=gen_server:call({server,?Server4},stats),
-  Data1=add_last(Ets1,[]),
-  Data2=add_last(Ets2,[]),
-  Data3=add_last(Ets3,[]),
-  Data4=add_last(Ets4,[]),
-  io:format("area 1:~n"),
-  create_Stats(Data1,0,0,0),
-  io:format("area 2:~n"),
-  create_Stats(Data2,0,0,0),
-  io:format("area 3:~n"),
-  create_Stats(Data3,0,0,0),
-  io:format("area 4:~n"),
-  create_Stats(Data4,0,0,0),
+  [{_,Status1}]=ets:lookup(servers,?Server1),
+  case Status1 of on->Ets1=gen_server:call({server,?Server1},stats), Data1=add_last(Ets1,[]),  io:format("area 1:~n"),
+    create_Stats(Data1,0,0,0);
+                  off->ok end,
+  [{_,Status2}]=ets:lookup(servers,?Server2),
+  case Status2 of on->Ets2=gen_server:call({server,?Server2},stats),  Data2=add_last(Ets2,[]), io:format("area 2:~n"),
+    create_Stats(Data2,0,0,0);
+    off->ok end,
+  [{_,Status3}]=ets:lookup(servers,?Server3),
+  case Status3 of on->Ets3=gen_server:call({server,?Server3},stats),Data3=add_last(Ets3,[]), io:format("area 3:~n"),
+    create_Stats(Data3,0,0,0);
+    off->ok end,
+  [{_,Status4}]=ets:lookup(servers,?Server4),
+  case Status4 of on->Ets4=gen_server:call({server,?Server4},stats), Data4=add_last(Ets4,[]),  io:format("area 4:~n"),
+    create_Stats(Data4,0,0,0);
+    off->ok end,
   wxWindow:destroy(Frame),
   wx:destroy(),
   {stop,normal,State}.

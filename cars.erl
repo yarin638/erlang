@@ -28,16 +28,13 @@ start_link() ->
   gen_statem:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 start(Cname,Details,Pc,Dir,Road)->
-  %io:format("starting car in statem"),
-  %io:format("start init"),
   gen_statem:start({local,Cname},?MODULE,[Cname,Details,Pc,Cname,Dir,Road],[]).
 
 
 %%%%%%Api must have func%%%%%%%%%%%%%%%%%%%%%ERL%%%%%%%%%
 init([Cname,X,Y,Cname,Dir,Road])->%spwan all the sensors
 
-  Data={X,Y,Dir,Cname},
-  %io:format("get data in init"),
+  Data={X,Y,Dir,Cname},%enter the data 
   ets:insert(cars,{Cname,Road,{X,Y},0,Dir,red}),
   case ets:member(cars_stats,Cname) of
     false-> ets:insert(cars_stats,{Cname,erlang:timestamp(),0,0,0});
