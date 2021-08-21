@@ -37,15 +37,11 @@ init([])->
   ets:insert(servers,{?Server2,on}),
   ets:insert(servers,{?Server3,on}),
   ets:insert(servers,{?Server4,on}),
-  %net_kernel:connect_node(?Server1),
-  %net_kernel:connect_node(?Server2),
-  %net_kernel:connect_node(?Server3),
-  %net_kernel:connect_node(?Server4),
   rpc:call(?Server1,server,start_link,[]),
   rpc:call(?Server2,server,start_link,[]),
   rpc:call(?Server3,server,start_link,[]),
   rpc:call(?Server4,server,start_link,[]),
-  %%start traffic_light%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%start traffic_light%
   gen_server:cast({server,?Server1},{start_traffic_light,1,120,130,red,t1}),
   %ets:insert(traffic_light,{t1,1,120,130,red,?Server1}),
 
@@ -82,8 +78,9 @@ init([])->
   gen_server:cast({server,?Server3},{start_traffic_light,25,700,720,green,t15}),
   gen_server:cast({server,?Server2},{start_traffic_light,12,40,745,red,t16}),
   gen_server:cast({server,?Server2},{start_traffic_light,19,135,760,green,t17}),
+
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%start junc%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%start junc%%
   gen_server:cast({server,?Server1},{start_junc,{175,95},[1,2],[3,4],[south,east]}),
   ets:insert(junction,{{175,95},[1,2],[3,6],[south,east],?Server1}),
 
@@ -132,12 +129,7 @@ init([])->
   gen_server:cast({server,?Server4},{start_junc,{395,220},[33],[35,5],[south,north]}),
   ets:insert(junction,{{395,220},[33],[33,5],[south,north],?Server4}),
 
-  % {ok, Number} = io:read("Enter number of cars(between 5 and 11):"),
-  % List=[{c1,175,10,south,2,?Server1},{c2,550,95,east,6,?Server4},{c3,0,520,east,11,?Server2},{c4,480,95,east,6,?Server4}, {c5,450,220,west,33,?Server4},{c6,570,634,east,18,?Server3},
-  %{c8,200,345,east,10,?Server1},{c8,320,520,east,14,?Server3},{c9,405,430,south,15,?Server3},{c10,175,250,south,3,?Server1},{c11,645,850,north,22,?Server4}],
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  % create_cars(List,Number),
-  %%%%start cars%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   %%%%start cars%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   gen_server:cast({server,?Server1},{start_car,yarin,175,10,south,2}),
   %ets:insert(cars,{yarin175,2,175,10,south,?Server1}),
   gen_server:cast({server,?Server4},{start_car,lotke,550,95,east,6}),
@@ -154,12 +146,12 @@ init([])->
   %gen_server:cast({server,?Server4},{start_car,shahar,645,850,north,130}),
   %gen_server:cast({server,?Server3},{start_car,shaar,645,900,north,22}),
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+  %spawn monitors%
   spawn(main,check_PC,[?Server1]),
   spawn(main,check_PC,[?Server2]),
   spawn(main,check_PC,[?Server3]),
   spawn(main,check_PC,[?Server4]),
-
+ %initiate graphic part%
   WxServer=wx:new(),
   MyFrame=wxFrame:new(WxServer,123,"TrafficMap",[{size,{?Mx,?My}}]),
   MyPanel=wxPanel:new(MyFrame),
@@ -184,9 +176,10 @@ handle_info({nodeup,PC},State)->
 handle_event(#wx{event = #wxClose{}},State = #state {frame = Frame}) -> % close window event
   io:format("Printing Statistics:~n"),
   [{_,Status1}]=ets:lookup(servers,?Server1),
+  %if server is up, get the statistics and display it%
   case Status1 of on->Ets1=gen_server:call({server,?Server1},stats), Data1=add_last(Ets1,[]),  io:format("area 1:~n"),
     create_Stats(Data1,0,0,0);
-                  off->ok end,
+    off->ok end,
   [{_,Status2}]=ets:lookup(servers,?Server2),
   case Status2 of on->Ets2=gen_server:call({server,?Server2},stats),  Data2=add_last(Ets2,[]), io:format("area 2:~n"),
     create_Stats(Data2,0,0,0);
@@ -208,7 +201,8 @@ handle_sync_event(#wx{event=#wxPaint{}}, _,  _State = #state{panel=MyPanel,map=M
   wxDC:clear(DC),
   wxDC:drawBitmap(DC,Map,{0,0}),
   %wxDC:drawBitmap(DC,RedCarE,{1,1}),
-  %getting information about car location from servers
+  %getting information about car location from servers and display it%
+  %also get information about traffic light color and display it%
   [{_,Status1}]=ets:lookup(servers,?Server1),
   case Status1 of on->CarS1=gen_server:call({server,?Server1},firstcar),
     TlS1=gen_server:call({server,?Server1},firstTl),
@@ -241,6 +235,7 @@ handle_sync_event(#wx{event=#wxPaint{}}, _,  _State = #state{panel=MyPanel,map=M
 handle_sync_event(_Event,_,State) ->
   {noreply, State}.
 
+%function that responsible for printing the color of the traffic light%
 printTl(_,_,_,_,[],_)->
   ok;
 printTl(_,_,_,_,{reply,[],{server_state}},_)->
@@ -264,7 +259,7 @@ printTl(Panel,Green,Red,Yellow,Tl,ServerN)->
 
 
 
-
+%function that responsible to display the right location of the cars%
 cars_movement(_,_,_,_,_,[],_)->
   ok;
 cars_movement(Panel,RedCarN,RedCarW,RedCarS,RedCarE,Car,ServerN)->
@@ -293,6 +288,7 @@ cars_movement(Panel,RedCarN,RedCarW,RedCarS,RedCarE,Car,ServerN)->
       cars_movement(Panel,RedCarN,RedCarW,RedCarS,RedCarE,NextCar,ServerN);
     true->nothing end.
 
+%function that responsible to make all the sprites ready for use.
 createMap()->
   %create Map
   MyMap = wxImage:scale(wxImage:new("nmap.jpg"),?Mx,?My),
@@ -329,7 +325,7 @@ createMap()->
 
   {BMap,BRedCarW,BRedCarN,BRedCarE,BRedCarS,BGreen,Bred,Byellow}.
 
-
+%if the server is down, move the cars to different pc%
 moveCarsToOtherPc(_PC_down,_PcToMove,[])->ok;
 moveCarsToOtherPc(_PC_down,_PcToMove,'$end_of_table')->ok;
 moveCarsToOtherPc(PC_down,PcToMove,CarToMove)->[{CarNumber1,Road1,Cx1,Cy1,Dir1,Server}]=CarToMove,
@@ -338,7 +334,7 @@ moveCarsToOtherPc(PC_down,PcToMove,CarToMove)->[{CarNumber1,Road1,Cx1,Cy1,Dir1,S
     true->moveCarsToOtherPc(PC_down,PcToMove,ets:lookup(cars,ets:next(cars,CarNumber1)))
   end.
 
-
+%if the server is down, move the traffic lights to different pc%
 moveTrafficLightToOtherPc(Counter,_PC_down,_PcToMove,[])->ets:update_element(traffic_light_number,number,[{2,Counter}]),ok;
 moveTrafficLightToOtherPc(Counter,_PC_down,_PcToMove,'$end_of_table')->ets:update_element(traffic_light_number,number,[{2,Counter}]),ok;
 moveTrafficLightToOtherPc(Counter,PC_down,PcToMove,TrafficToMOve)->[{Road,X,Y,Color,Server}]=TrafficToMOve,
@@ -347,6 +343,7 @@ moveTrafficLightToOtherPc(Counter,PC_down,PcToMove,TrafficToMOve)->[{Road,X,Y,Co
     true->Name=makeAnAtom(Counter,k),moveTrafficLightToOtherPc(Counter,PC_down,PcToMove,ets:lookup(traffic_light,ets:next(traffic_light,Road)))
   end.
 
+%if the server is down, move the junction to different pc%
 moveJunctionToOtherpc(_PC_down,_PcToMove,[])->ok;
 moveJunctionToOtherpc(_,_,'$end_of_table')->ok;
 moveJunctionToOtherpc(PC_down,PcToMove,JuncToMOve)->[{{X,Y},Listin,ListOut,ListDir,Server}]=JuncToMOve,
@@ -354,11 +351,12 @@ moveJunctionToOtherpc(PC_down,PcToMove,JuncToMOve)->[{{X,Y},Listin,ListOut,ListD
     Server==PC_down->   gen_server:cast({server,PcToMove},{start_junc,{X,Y},Listin,ListOut,ListDir}),moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:next(junction,{X,Y})));
     true->moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:next(junction,{X,Y}))) end.
 
+%check to which pc we can give the data of the fallen computer%
 checkWichBackupIsALIVE(PC_down,PcToMove)->[{_,Counter}]=ets:lookup(traffic_light_number,number),[{_,Status}]=ets:lookup(servers,PcToMove),if Status==off->checkWichBackupIsALIVE(PC_down,ets:next(servers,PcToMove));
-                                                                                      true->moveCarsToOtherPc(PC_down,PcToMove,ets:lookup(cars,ets:first(cars))),
-                                                                                        moveTrafficLightToOtherPc(Counter,PC_down,PcToMove,ets:lookup(traffic_light,ets:first(traffic_light))),
-                                                                                        moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:first(junction))) end.
-
+                                                                                                                                            true->moveCarsToOtherPc(PC_down,PcToMove,ets:lookup(cars,ets:first(cars))),
+                                                                                                                                              moveTrafficLightToOtherPc(Counter,PC_down,PcToMove,ets:lookup(traffic_light,ets:first(traffic_light))),
+                                                                                                                                              moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:first(junction))) end.
+%check with monitor if pc is down%
 check_PC(PC_to_check) ->erlang:monitor_node(PC_to_check, true),
   receive
     {nodedown,_}-> ets:update_element(servers,PC_to_check,[{2,off}]),
@@ -380,6 +378,7 @@ check_PC(PC_to_check) ->erlang:monitor_node(PC_to_check, true),
 %  gen_server:cast({server,Server},{start_car,Car,X,Y,Dir,Road}),
 % create_cars(tl(Data),Number-1).
 
+%function that responsible of gathering information for stats%
 add_last([],NewList)->
   NewList;
 add_last([H|T],NewList) ->
@@ -397,7 +396,7 @@ add_last([H|T],NewList) ->
       List=lists:append(NewList,[{Car,Drive,Stop}]),
       add_last(T,List)
   end.
-
+%create the stats and display it to user%
 create_Stats([],DriveSum,StopSum,Counter)->
   PrecentD=DriveSum/(DriveSum+StopSum)*100,
   PrecentS=100-PrecentD,
