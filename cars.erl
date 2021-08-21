@@ -135,26 +135,39 @@ stop(Car) ->
 %%%%%%%%%%%%states%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 stright(cast, move_car1, Data) ->
+  [{_,Status1}]=ets:lookup(servers,?Server1),
   {_,_,_,Cname}=Data,
   update_time(Cname,move_area),
   [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Cname),
+  if
+    Status1==on->
   case Dir of
     west->gen_server:cast({server,?Server1},{start_car,CarNumber1,Cx-3,Cy,Dir,Road});
     north->gen_server:cast({server,?Server1},{start_car,CarNumber1,Cx,Cy-3,Dir,Road})
-  end,
+  end;
+    true->  case Dir of
+              west -> sendToNextServer(CarNumber1,Cx-3,Cy,Dir,Road,ets:first(servers));
+              north->sendToNextServer(CarNumber1,Cx,Cy+3,Dir,Road,ets:first(servers))end end,
+
   ets:update_element(cars,Cname,[{2,400},{3,{100000,10000}},{5,south}]),
   %exit(get(sens1),kill), exit(get(sens2),kill), exit(get(sens3),kill), exit(get(sens4),kill),
   %ets:delete(cars,Cname),
   {next_state,stooping,Data};
 
 stright(cast, move_car2, Data) ->
+  [{_,Status2}]=ets:lookup(servers,?Server2),
   {_,_,_,Cname}=Data,
   update_time(Cname,move_area),
   [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Cname),
+  if
+    Status2==on->
   case Dir of
     west->gen_server:cast({server,?Server2},{start_car,CarNumber1,Cx-3,Cy,Dir,Road});
     south->gen_server:cast({server,?Server2},{start_car,CarNumber1,Cx,Cy+3,Dir,Road})
-  end,
+  end;
+      true->  case Dir of
+       west -> sendToNextServer(CarNumber1,Cx-3,Cy,Dir,Road,ets:first(servers));
+               south->sendToNextServer(CarNumber1,Cx,Cy+3,Dir,Road,ets:first(servers))end end,
   ets:update_element(cars,Cname,[{2,400},{3,{100000,10000}},{5,south}]),
   %exit(get(sens1),kill), exit(get(sens2),kill), exit(get(sens3),kill), exit(get(sens4),kill),
   %ets:delete(cars,Cname),
@@ -164,10 +177,16 @@ stright(cast, move_car3, Data) ->
   {_,_,_,Cname}=Data,
   update_time(Cname,move_area),
   [{CarNumber1,Road,{Cx,Cy},_Speed,Dir,_Color}]=ets:lookup(cars,Cname),
+  [{_,Status3}]=ets:lookup(servers,?Server3),
+  if
+    Status3==on->
   case Dir of
     east->gen_server:cast({server,?Server3},{start_car,CarNumber1,Cx+3,Cy,Dir,Road});
     south->gen_server:cast({server,?Server3},{start_car,CarNumber1,Cx,Cy+3,Dir,Road})
-  end,
+  end;
+    true->  case Dir of
+              east -> sendToNextServer(CarNumber1,Cx+3,Cy,Dir,Road,ets:first(servers));
+              south->sendToNextServer(CarNumber1,Cx,Cy+3,Dir,Road,ets:first(servers))end end,
   ets:update_element(cars,Cname,[{2,400},{3,{100000,10000}},{5,south}]),
   % exit(get(sens1),kill), exit(get(sens2),kill), exit(get(sens3),kill), exit(get(sens4),kill),
   %ets:delete(cars,Cname),

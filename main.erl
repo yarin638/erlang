@@ -45,28 +45,28 @@ init([])->
   rpc:call(?Server4,server,start_link,[]),
   %%start traffic_light%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   gen_server:cast({server,?Server1},{start_traffic_light,1,120,130,red,t1}),
-  ets:insert(traffic_light,{t1,1,120,130,red,?Server1}),
+  %ets:insert(traffic_light,{t1,1,120,130,red,?Server1}),
 
   gen_server:cast({server,?Server1},{start_traffic_light,2,140,40,green,t2}),
-  ets:insert(traffic_light,{t2,2,140,40,green,?Server1}),
+  %ets:insert(traffic_light,{t2,2,140,40,green,?Server1}),
 
   gen_server:cast({server,?Server4},{start_traffic_light,4,340,130,red,t3}),
-  ets:insert(traffic_light,{t3,4,340,130,red,?Server4}),
+  %ets:insert(traffic_light,{t3,4,340,130,red,?Server4}),
 
   gen_server:cast({server,?Server4},{start_traffic_light,5,430,160,green,t4}),
-  ets:insert(traffic_light,{t4,5,395,160,green,?Server4}),
+  %ets:insert(traffic_light,{t4,5,395,160,green,?Server4}),
 
   gen_server:cast({server,?Server4},{start_traffic_light,6,590,130,green,t5}),
-  ets:insert(traffic_light,{t5,6,590,95,green,?Server4}),
+  %ets:insert(traffic_light,{t5,6,590,95,green,?Server4}),
 
   gen_server:cast({server,?Server4},{start_traffic_light,7,680,150,red,t6}),
-  ets:insert(traffic_light,{t6,7,645,150,red,?Server4}),
+  %ets:insert(traffic_light,{t6,7,645,150,red,?Server4}),
 
   gen_server:cast({server,?Server4},{start_traffic_light,10,360,380,red,t18}),
-  ets:insert(traffic_light,{t18,10,360,345,red,?Server4}),
+  %ets:insert(traffic_light,{t18,10,360,345,red,?Server4}),
 
   gen_server:cast({server,?Server4},{start_traffic_light,35,360,310,green,t19}),
-  ets:insert(traffic_light,{t19,35,395,310,green,?Server4}),
+  %ets:insert(traffic_light,{t19,35,395,310,green,?Server4}),
 
   gen_server:cast({server,?Server2},{start_traffic_light,13,120,560,red,t7}),
   gen_server:cast({server,?Server2},{start_traffic_light,9,120,465,green,t8}),
@@ -212,20 +212,20 @@ handle_sync_event(#wx{event=#wxPaint{}}, _,  _State = #state{panel=MyPanel,map=M
     TlS1=gen_server:call({server,?Server1},firstTl),
     cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,CarS1,?Server1),
     printTl(MyPanel,Green,Red,Yellow,TlS1,?Server1);
-    true->nothing end,
+    off->ok end,
 
   [{_,Status2}]=ets:lookup(servers,?Server2),
   case Status2 of on->  CarS2=gen_server:call({server,?Server2},firstcar),
     cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,CarS2,?Server2),
     TlS2=gen_server:call({server,?Server2},firstTl),
     printTl(MyPanel,Green,Red,Yellow,TlS2,?Server2);
-    true->nothing end,
+    off->ok end,
   [{_,Status3}]=ets:lookup(servers,?Server3),
   case Status3 of on->  CarS3=gen_server:call({server,?Server3},firstcar),
     cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,CarS3,?Server3),
     TlS3=gen_server:call({server,?Server3},firstTl),
     printTl(MyPanel,Green,Red,Yellow,TlS3,?Server3);
-    true-> nothing end,
+    off-> ok end,
 
   [{_,Status4}]=ets:lookup(servers,?Server4),
   io:format("status of server 4:~p~n",[Status4]),
@@ -233,7 +233,7 @@ handle_sync_event(#wx{event=#wxPaint{}}, _,  _State = #state{panel=MyPanel,map=M
     cars_movement(MyPanel,RedCarN,RedCarW,RedCarS,RedCarE,CarS4,?Server4),
     TlS4=gen_server:call({server,?Server4},firstTl),
     printTl(MyPanel,Green,Red,Yellow,TlS4,?Server4);
-    true->nothing end;
+    off->ok end;
 %display car's location at the screen%
 
 handle_sync_event(_Event,_,State) ->
@@ -247,6 +247,7 @@ printTl(Panel,Green,Red,Yellow,Tl,ServerN)->
   DC=wxClientDC:new(Panel),
   %io:format("~p~n",[Tl]),
   [{R1,{Jx,Jy},Color}]=Tl,
+  ets:insert(traffic_light,{R1,Jx,Jy,Color,ServerN}),
   case Color of
     red->wxDC:drawBitmap(DC,Red,{Jx,Jy});
     green->wxDC:drawBitmap(DC,Green,{Jx,Jy});
@@ -338,7 +339,7 @@ moveCarsToOtherPc(PC_down,PcToMove,CarToMove)->[{CarNumber1,Road1,Cx1,Cy1,Dir1,S
 
 moveTrafficLightToOtherPc(_PC_down,_PcToMove,[])->ok;
 moveTrafficLightToOtherPc(_PC_down,_PcToMove,'$end_of_table')->ok;
-moveTrafficLightToOtherPc(PC_down,PcToMove,TrafficToMOve)->[{Name,Road,X,Y,Color,Server}]=TrafficToMOve,
+moveTrafficLightToOtherPc(PC_down,PcToMove,TrafficToMOve)->[{Road,X,Y,Color,Server}]=TrafficToMOve,
   if
     Server==PC_down->gen_server:cast({server,PcToMove},{start_traffic_light,Road,X,Y,Color,Name}),moveTrafficLightToOtherPc(PC_down,PcToMove,ets:lookup(traffic_light,ets:next(traffic_light,Name)));
     true->moveTrafficLightToOtherPc(PC_down,PcToMove,ets:lookup(traffic_light,ets:next(traffic_light,Name)))
