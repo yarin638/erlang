@@ -46,6 +46,7 @@ start_link() ->
 %start_car(Name,X,Y,Dir,Road)-> gen_server:cast(?MODULE,{start_car,Name,X,Y,Dir,Road}). % initialize car process
 %%%%%%%%%
 init([]) ->
+  %%%%%%%%%%%%%%%%%%%statr and init all the ets tables for the servers%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%55
   ets:new(cars,[set,public,named_table]), ets:new(junction,[set,public,named_table]),ets:new(traffic_light,[set,public,named_table]),
   ets:new(cars_stats,[set,public,named_table]),
   ets:new(servers,[set,public,named_table]),
@@ -53,18 +54,6 @@ init([]) ->
   ets:insert(servers,{?Server2,on}),
   ets:insert(servers,{?Server3,on}),
   ets:insert(servers,{?Server4,on}),
-  %ets:insert(junction,{{1130,105},[0,1],[2,3],[east,north]}),
-  %ets:lookup(junction,{1,7}),
-  %cars:start(yan,200,600,east,0),
-  % ets:insert(cars,{yarin,0,{290,400},0,east,red}),
-  %spawn(alerts,switch_area,[yarin]),
-  %traffic_light:start(0,{1137,100},t1),
-  %cars:start(shahar,645,100,north,22),
-  %cars:start(yarin,645,70,north,22),
-  %cars:start(shahar,800,100,north,22),
-  %traffic_light:start({22,645,65,red},t1),
-  %traffic_light:start({1,1055,100,green},t2),
-
   {ok, #server_state{}}.
 
 %% @private
@@ -85,7 +74,7 @@ handle_call(firstTl, _From, State) ->
   TlTosend=[{R1,{Jx,Jy},Color}],
   {reply,TlTosend,State};
 
-handle_call({nextTl,Tl}, _From, State) ->
+handle_call({nextTl,Tl}, _From, State) ->%send back the next tl
   Bool=ets:member(traffic_light,Tl),
   if
     Bool=:=true->
@@ -101,14 +90,14 @@ handle_call({nextTl,Tl}, _From, State) ->
     true->TlTosend=[] end,
   {reply,TlTosend, State};
 
-handle_call(firstcar, _From, State) ->
+handle_call(firstcar, _From, State) ->%sent the first car in the ets table
   CarTosend=ets:lookup(cars,ets:first(cars)),
   {reply,CarTosend, State};
 
-handle_call(stats, _From, State)->
+handle_call(stats, _From, State)->%send the statse
   {reply,ets:tab2list(cars_stats),State};
 
-handle_call({nextcar,Car}, _From, State) ->
+handle_call({nextcar,Car}, _From, State) ->%send back the next car from the server
   Bool=ets:member(cars,Car),
   if
     Bool=:=true->CarTosend=ets:lookup(cars,ets:next(cars,Car));
@@ -123,23 +112,19 @@ handle_call({nextcar,Car}, _From, State) ->
   {noreply, NewState :: #server_state{}, timeout() | hibernate} |
   {stop, Reason :: term(), NewState :: #server_state{}}).
 
-handle_cast({start_car,Name,X,Y,Dir,Road}, State) ->
-  %io:format("car started:~p,~p,~p,~p",[Name,X,Y,Dir]),
-  %io:format("starting car"),
+handle_cast({start_car,Name,X,Y,Dir,Road}, State) ->%start the car on the server
   Newname=makeAnAtom(X,Name),
   cars:start(Newname,X,Y,Dir,Road),
   {noreply, State};
 
-handle_cast({server_down,Server}, State) ->
-  %io:format("car started:~p,~p,~p,~p",[Name,X,Y,Dir]),
-  %io:format("starting car"),
+handle_cast({server_down,Server}, State) ->%uptade the severr that another server fall down
   ets:update_element(servers,Server,[{2,off}]),
   {noreply, State};
 
-handle_cast({start_traffic_light,Road,X,Y,Color,Name}, State) ->
+handle_cast({start_traffic_light,Road,X,Y,Color,Name}, State) ->% start traffic light on the server
   traffic_light:start({Road,X,Y,Color},Name),
   {noreply, State};
-handle_cast({start_junc,Cord,RoadlisIn,Roadlisout,Dirlist}, State) ->
+handle_cast({start_junc,Cord,RoadlisIn,Roadlisout,Dirlist}, State) ->% start junc on the server
   ets:insert(junction,{Cord,RoadlisIn,Roadlisout,Dirlist}),
   {noreply, State}.
 
