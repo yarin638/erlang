@@ -310,11 +310,11 @@ createMap()->
   BRedCarS=wxBitmap:new(RedCarS),
   wxImage:destroy(RedCar),
 
-  Green=wxImage:scale(wxImage:new("green.png"),30,30),
+  Green=wxImage:scale(wxImage:new("green.jpg"),30,30),
   BGreen=wxBitmap:new(Green),
   wxImage:destroy(Green),
 
-  Red=wxImage:scale(wxImage:new("red.png"),30,30),
+  Red=wxImage:scale(wxImage:new("red.jpg"),30,30),
   Bred=wxBitmap:new(Red),
   wxImage:destroy(Red),
 
