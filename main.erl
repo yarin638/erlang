@@ -340,7 +340,7 @@ moveTrafficLightToOtherPc(Counter,_PC_down,_PcToMove,'$end_of_table')->ets:updat
 moveTrafficLightToOtherPc(Counter,PC_down,PcToMove,TrafficToMOve)->[{Road,X,Y,Color,Server}]=TrafficToMOve,
   if
     Server==PC_down->Name=makeAnAtom(Counter,k),gen_server:cast({server,PcToMove},{start_traffic_light,Road,X,Y,Color,Name}),moveTrafficLightToOtherPc(Counter+1,PC_down,PcToMove,ets:lookup(traffic_light,ets:next(traffic_light,Road)));
-    true->Name=makeAnAtom(Counter,k),moveTrafficLightToOtherPc(Counter,PC_down,PcToMove,ets:lookup(traffic_light,ets:next(traffic_light,Road)))
+    true->_Name=makeAnAtom(Counter,k),moveTrafficLightToOtherPc(Counter,PC_down,PcToMove,ets:lookup(traffic_light,ets:next(traffic_light,Road)))
   end.
 
 %if the server is down, move the junction to different pc%
@@ -364,7 +364,7 @@ check_PC(PC_to_check) ->erlang:monitor_node(PC_to_check, true),
       gen_server:cast({server,?Server2},{server_down,PC_to_check}),
       gen_server:cast({server,?Server3},{server_down,PC_to_check}),
       gen_server:cast({server,?Server4},{server_down,PC_to_check})
-      ,[{_,Status1}]=ets:lookup(servers,?Server1),io:format("~n~n~n~n~n~nStatus=~p",[Status1]),checkWichBackupIsALIVE(PC_to_check,ets:first(servers)) end.
+      ,checkWichBackupIsALIVE(PC_to_check,ets:first(servers)) end.
 
 
 
