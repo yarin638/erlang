@@ -348,11 +348,11 @@ moveJunctionToOtherpc(_PC_down,_PcToMove,[])->ok;
 moveJunctionToOtherpc(_,_,'$end_of_table')->ok;
 moveJunctionToOtherpc(PC_down,PcToMove,JuncToMOve)->[{{X,Y},Listin,ListOut,ListDir,Server}]=JuncToMOve,
   if
-    Server==PC_down->   gen_server:cast({server,PcToMove},{start_junc,{X,Y},Listin,ListOut,ListDir}),moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:next(junction,{X,Y})));
+    Server==PC_down->   gen_server:cast({server,PcToMove},{start_junc,{X,Y},Listin,ListOut,ListDir}),io:format("~p",[PC_down]),moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:next(junction,{X,Y})));
     true->moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:next(junction,{X,Y}))) end.
 
 %check to which pc we can give the data of the fallen computer%
-checkWichBackupIsALIVE(PC_down,PcToMove)->[{_,Counter}]=ets:lookup(traffic_light_number,number),[{_,Status}]=ets:lookup(servers,PcToMove),if Status==off->checkWichBackupIsALIVE(PC_down,ets:next(servers,PcToMove));
+checkWichBackupIsALIVE(PC_down,PcToMove)->[{_,Counter}]=ets:lookup(traffic_light_number,number),[{_,Status}]=ets:lookup(servers,PcToMove),if Status==off->io:format("~p",[PC_down]),checkWichBackupIsALIVE(PC_down,ets:next(servers,PcToMove));
                                                                                                                                             true->moveCarsToOtherPc(PC_down,PcToMove,ets:lookup(cars,ets:first(cars))),
                                                                                                                                               moveTrafficLightToOtherPc(Counter,PC_down,PcToMove,ets:lookup(traffic_light,ets:first(traffic_light))),
                                                                                                                                               moveJunctionToOtherpc(PC_down,PcToMove,ets:lookup(junction,ets:first(junction))) end.
